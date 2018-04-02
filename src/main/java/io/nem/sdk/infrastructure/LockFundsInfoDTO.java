@@ -1,4 +1,20 @@
 /*
+ * Copyright 2018 NEM
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * NIS2 API Endpoints
  * This document defines all the nis2 api endpoints
  *
@@ -11,29 +27,24 @@
  */
 
 
-package io.swagger.client.model;
+
+package io.nem.sdk.infrastructure;
+
+import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
-import java.util.Arrays;
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.client.model.LockFundsInfo;
-import java.io.IOException;
+
 
 /**
  * LockFundsInfoDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-03-30T14:24:32.577Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
 public class LockFundsInfoDTO {
   @SerializedName("lock")
-  private LockFundsInfo lock = null;
+  private LockFundsDTO lock = null;
 
-  public LockFundsInfoDTO lock(LockFundsInfo lock) {
+  public LockFundsInfoDTO lock(LockFundsDTO lock) {
     this.lock = lock;
     return this;
   }
@@ -43,11 +54,11 @@ public class LockFundsInfoDTO {
    * @return lock
   **/
   @ApiModelProperty(required = true, value = "")
-  public LockFundsInfo getLock() {
+  public LockFundsDTO getLock() {
     return lock;
   }
 
-  public void setLock(LockFundsInfo lock) {
+  public void setLock(LockFundsDTO lock) {
     this.lock = lock;
   }
 

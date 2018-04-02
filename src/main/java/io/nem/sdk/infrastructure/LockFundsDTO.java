@@ -1,4 +1,20 @@
 /*
+ * Copyright 2018 NEM
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * NIS2 API Endpoints
  * This document defines all the nis2 api endpoints
  *
@@ -11,25 +27,20 @@
  */
 
 
-package io.swagger.client.model;
+
+package io.nem.sdk.infrastructure;
+
+import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
-import java.util.Arrays;
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.client.model.UInt64DTO;
-import java.io.IOException;
+
 
 /**
- * LockFundsInfo
+ * LockFundsDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-03-30T14:24:32.577Z")
-public class LockFundsInfo {
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
+public class LockFundsDTO {
   @SerializedName("account")
   private String account = null;
 
@@ -51,7 +62,7 @@ public class LockFundsInfo {
   @SerializedName("hash")
   private String hash = null;
 
-  public LockFundsInfo account(String account) {
+  public LockFundsDTO account(String account) {
     this.account = account;
     return this;
   }
@@ -69,7 +80,7 @@ public class LockFundsInfo {
     this.account = account;
   }
 
-  public LockFundsInfo accountAddress(String accountAddress) {
+  public LockFundsDTO accountAddress(String accountAddress) {
     this.accountAddress = accountAddress;
     return this;
   }
@@ -87,7 +98,7 @@ public class LockFundsInfo {
     this.accountAddress = accountAddress;
   }
 
-  public LockFundsInfo mosaicId(UInt64DTO mosaicId) {
+  public LockFundsDTO mosaicId(UInt64DTO mosaicId) {
     this.mosaicId = mosaicId;
     return this;
   }
@@ -105,7 +116,7 @@ public class LockFundsInfo {
     this.mosaicId = mosaicId;
   }
 
-  public LockFundsInfo amount(UInt64DTO amount) {
+  public LockFundsDTO amount(UInt64DTO amount) {
     this.amount = amount;
     return this;
   }
@@ -123,7 +134,7 @@ public class LockFundsInfo {
     this.amount = amount;
   }
 
-  public LockFundsInfo height(UInt64DTO height) {
+  public LockFundsDTO height(UInt64DTO height) {
     this.height = height;
     return this;
   }
@@ -141,7 +152,7 @@ public class LockFundsInfo {
     this.height = height;
   }
 
-  public LockFundsInfo status(Integer status) {
+  public LockFundsDTO status(Integer status) {
     this.status = status;
     return this;
   }
@@ -159,7 +170,7 @@ public class LockFundsInfo {
     this.status = status;
   }
 
-  public LockFundsInfo hash(String hash) {
+  public LockFundsDTO hash(String hash) {
     this.hash = hash;
     return this;
   }
@@ -186,14 +197,14 @@ public class LockFundsInfo {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    LockFundsInfo lockFundsInfo = (LockFundsInfo) o;
-    return Objects.equals(this.account, lockFundsInfo.account) &&
-        Objects.equals(this.accountAddress, lockFundsInfo.accountAddress) &&
-        Objects.equals(this.mosaicId, lockFundsInfo.mosaicId) &&
-        Objects.equals(this.amount, lockFundsInfo.amount) &&
-        Objects.equals(this.height, lockFundsInfo.height) &&
-        Objects.equals(this.status, lockFundsInfo.status) &&
-        Objects.equals(this.hash, lockFundsInfo.hash);
+    LockFundsDTO lockFundsDTO = (LockFundsDTO) o;
+    return Objects.equals(this.account, lockFundsDTO.account) &&
+        Objects.equals(this.accountAddress, lockFundsDTO.accountAddress) &&
+        Objects.equals(this.mosaicId, lockFundsDTO.mosaicId) &&
+        Objects.equals(this.amount, lockFundsDTO.amount) &&
+        Objects.equals(this.height, lockFundsDTO.height) &&
+        Objects.equals(this.status, lockFundsDTO.status) &&
+        Objects.equals(this.hash, lockFundsDTO.hash);
   }
 
   @Override
@@ -205,7 +216,7 @@ public class LockFundsInfo {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class LockFundsInfo {\n");
+    sb.append("class LockFundsDTO {\n");
     
     sb.append("    account: ").append(toIndentedString(account)).append("\n");
     sb.append("    accountAddress: ").append(toIndentedString(accountAddress)).append("\n");

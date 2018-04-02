@@ -1,4 +1,20 @@
 /*
+ * Copyright 2018 NEM
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * NIS2 API Endpoints
  * This document defines all the nis2 api endpoints
  *
@@ -11,44 +27,38 @@
  */
 
 
-package io.swagger.client.model;
+package io.nem.sdk.infrastructure;
+
+import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
-import java.util.Arrays;
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.client.model.SecretLockInfo;
-import java.io.IOException;
+
 
 /**
  * SecretLockInfoDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-03-30T14:24:32.577Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
 public class SecretLockInfoDTO {
-  @SerializedName("mosaicId")
-  private SecretLockInfo mosaicId = null;
+  @SerializedName("lock")
+  private SecretLockDTO lock = null;
 
-  public SecretLockInfoDTO mosaicId(SecretLockInfo mosaicId) {
-    this.mosaicId = mosaicId;
+  public SecretLockInfoDTO lock(SecretLockDTO lock) {
+    this.lock = lock;
     return this;
   }
 
    /**
-   * Get mosaicId
-   * @return mosaicId
+   * Get lock
+   * @return lock
   **/
-  @ApiModelProperty(value = "")
-  public SecretLockInfo getMosaicId() {
-    return mosaicId;
+  @ApiModelProperty(required = true, value = "")
+  public SecretLockDTO getLock() {
+    return lock;
   }
 
-  public void setMosaicId(SecretLockInfo mosaicId) {
-    this.mosaicId = mosaicId;
+  public void setLock(SecretLockDTO lock) {
+    this.lock = lock;
   }
 
 
@@ -61,12 +71,12 @@ public class SecretLockInfoDTO {
       return false;
     }
     SecretLockInfoDTO secretLockInfoDTO = (SecretLockInfoDTO) o;
-    return Objects.equals(this.mosaicId, secretLockInfoDTO.mosaicId);
+    return Objects.equals(this.lock, secretLockInfoDTO.lock);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mosaicId);
+    return Objects.hash(lock);
   }
 
 
@@ -75,7 +85,7 @@ public class SecretLockInfoDTO {
     StringBuilder sb = new StringBuilder();
     sb.append("class SecretLockInfoDTO {\n");
     
-    sb.append("    mosaicId: ").append(toIndentedString(mosaicId)).append("\n");
+    sb.append("    lock: ").append(toIndentedString(lock)).append("\n");
     sb.append("}");
     return sb.toString();
   }

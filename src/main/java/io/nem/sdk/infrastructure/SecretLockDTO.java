@@ -1,4 +1,20 @@
 /*
+ * Copyright 2018 NEM
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * NIS2 API Endpoints
  * This document defines all the nis2 api endpoints
  *
@@ -11,25 +27,19 @@
  */
 
 
-package io.swagger.client.model;
+package io.nem.sdk.infrastructure;
+
+import com.google.gson.annotations.SerializedName;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
-import java.util.Arrays;
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.client.model.UInt64DTO;
-import java.io.IOException;
+
 
 /**
- * SecretLockInfo
+ * SecretLockDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-03-30T14:24:32.577Z")
-public class SecretLockInfo {
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
+public class SecretLockDTO {
   @SerializedName("account")
   private String account = null;
 
@@ -57,7 +67,7 @@ public class SecretLockInfo {
   @SerializedName("recipient")
   private String recipient = null;
 
-  public SecretLockInfo account(String account) {
+  public SecretLockDTO account(String account) {
     this.account = account;
     return this;
   }
@@ -75,7 +85,7 @@ public class SecretLockInfo {
     this.account = account;
   }
 
-  public SecretLockInfo accountAddress(String accountAddress) {
+  public SecretLockDTO accountAddress(String accountAddress) {
     this.accountAddress = accountAddress;
     return this;
   }
@@ -93,7 +103,7 @@ public class SecretLockInfo {
     this.accountAddress = accountAddress;
   }
 
-  public SecretLockInfo mosaicId(UInt64DTO mosaicId) {
+  public SecretLockDTO mosaicId(UInt64DTO mosaicId) {
     this.mosaicId = mosaicId;
     return this;
   }
@@ -111,7 +121,7 @@ public class SecretLockInfo {
     this.mosaicId = mosaicId;
   }
 
-  public SecretLockInfo amount(UInt64DTO amount) {
+  public SecretLockDTO amount(UInt64DTO amount) {
     this.amount = amount;
     return this;
   }
@@ -129,7 +139,7 @@ public class SecretLockInfo {
     this.amount = amount;
   }
 
-  public SecretLockInfo height(UInt64DTO height) {
+  public SecretLockDTO height(UInt64DTO height) {
     this.height = height;
     return this;
   }
@@ -147,7 +157,7 @@ public class SecretLockInfo {
     this.height = height;
   }
 
-  public SecretLockInfo status(Integer status) {
+  public SecretLockDTO status(Integer status) {
     this.status = status;
     return this;
   }
@@ -165,7 +175,7 @@ public class SecretLockInfo {
     this.status = status;
   }
 
-  public SecretLockInfo hashAlgorithm(Integer hashAlgorithm) {
+  public SecretLockDTO hashAlgorithm(Integer hashAlgorithm) {
     this.hashAlgorithm = hashAlgorithm;
     return this;
   }
@@ -183,7 +193,7 @@ public class SecretLockInfo {
     this.hashAlgorithm = hashAlgorithm;
   }
 
-  public SecretLockInfo secret(String secret) {
+  public SecretLockDTO secret(String secret) {
     this.secret = secret;
     return this;
   }
@@ -201,7 +211,7 @@ public class SecretLockInfo {
     this.secret = secret;
   }
 
-  public SecretLockInfo recipient(String recipient) {
+  public SecretLockDTO recipient(String recipient) {
     this.recipient = recipient;
     return this;
   }
@@ -228,16 +238,16 @@ public class SecretLockInfo {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SecretLockInfo secretLockInfo = (SecretLockInfo) o;
-    return Objects.equals(this.account, secretLockInfo.account) &&
-        Objects.equals(this.accountAddress, secretLockInfo.accountAddress) &&
-        Objects.equals(this.mosaicId, secretLockInfo.mosaicId) &&
-        Objects.equals(this.amount, secretLockInfo.amount) &&
-        Objects.equals(this.height, secretLockInfo.height) &&
-        Objects.equals(this.status, secretLockInfo.status) &&
-        Objects.equals(this.hashAlgorithm, secretLockInfo.hashAlgorithm) &&
-        Objects.equals(this.secret, secretLockInfo.secret) &&
-        Objects.equals(this.recipient, secretLockInfo.recipient);
+    SecretLockDTO secretLockDTO = (SecretLockDTO) o;
+    return Objects.equals(this.account, secretLockDTO.account) &&
+        Objects.equals(this.accountAddress, secretLockDTO.accountAddress) &&
+        Objects.equals(this.mosaicId, secretLockDTO.mosaicId) &&
+        Objects.equals(this.amount, secretLockDTO.amount) &&
+        Objects.equals(this.height, secretLockDTO.height) &&
+        Objects.equals(this.status, secretLockDTO.status) &&
+        Objects.equals(this.hashAlgorithm, secretLockDTO.hashAlgorithm) &&
+        Objects.equals(this.secret, secretLockDTO.secret) &&
+        Objects.equals(this.recipient, secretLockDTO.recipient);
   }
 
   @Override
@@ -249,7 +259,7 @@ public class SecretLockInfo {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class SecretLockInfo {\n");
+    sb.append("class SecretLockDTO {\n");
     
     sb.append("    account: ").append(toIndentedString(account)).append("\n");
     sb.append("    accountAddress: ").append(toIndentedString(accountAddress)).append("\n");

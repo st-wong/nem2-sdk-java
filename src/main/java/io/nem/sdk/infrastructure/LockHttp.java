@@ -38,12 +38,13 @@ public class LockHttp extends Http implements LockRepository {
 
     public LockHttp(String host) throws MalformedURLException {
         this(host, new NetworkHttp(host));
+        System.out.println(host);
+
     }
 
     public LockHttp(String host, NetworkHttp networkHttp) throws MalformedURLException {
         super(host, networkHttp);
     }
-
 
     @Override
     public Observable<LockFundsInfo> getLockFunds(String hash) {
@@ -62,7 +63,8 @@ public class LockHttp extends Http implements LockRepository {
                                         lockFundsInfoDTO.getLock().getAmount().extractIntArray()),
                                 lockFundsInfoDTO.getLock().getHeight().extractIntArray(),
                                 lockFundsInfoDTO.getLock().getStatus() == 0 ? LockStatus.UNUSED : LockStatus.USED,
-                                lockFundsInfoDTO.getLock().getHash()
+                                lockFundsInfoDTO.getLock().getHash(),
+                                lockFundsInfoDTO.getMeta().getId()
                         )));
     }
 
@@ -85,7 +87,8 @@ public class LockHttp extends Http implements LockRepository {
                                 secretLockInfoDTO.getLock().getStatus() == 0 ? LockStatus.UNUSED : LockStatus.USED,
                                 HashType.rawValueOf(secretLockInfoDTO.getLock().getHashAlgorithm()),
                                 secretLockInfoDTO.getLock().getSecret(),
-                                Address.createFromRawAddress(secretLockInfoDTO.getLock().getRecipient())
+                                Address.createFromEncoded(secretLockInfoDTO.getLock().getRecipient()),
+                                secretLockInfoDTO.getMeta().getId()
                         )));
     }
 
@@ -117,7 +120,8 @@ public class LockHttp extends Http implements LockRepository {
                                         lockFundsInfoDTO.getLock().getAmount().extractIntArray()),
                                 lockFundsInfoDTO.getLock().getHeight().extractIntArray(),
                                 lockFundsInfoDTO.getLock().getStatus() == 0 ? LockStatus.UNUSED : LockStatus.USED,
-                                lockFundsInfoDTO.getLock().getHash()
+                                lockFundsInfoDTO.getLock().getHash(),
+                                lockFundsInfoDTO.getMeta().getId()
                         ))
                         .toList()
                         .toObservable());
@@ -153,7 +157,8 @@ public class LockHttp extends Http implements LockRepository {
                                 secretLockInfoDTO.getLock().getStatus() == 0 ? LockStatus.UNUSED : LockStatus.USED,
                                 HashType.rawValueOf(secretLockInfoDTO.getLock().getHashAlgorithm()),
                                 secretLockInfoDTO.getLock().getSecret(),
-                                Address.createFromRawAddress(secretLockInfoDTO.getLock().getRecipient())
+                                Address.createFromEncoded(secretLockInfoDTO.getLock().getRecipient()),
+                                secretLockInfoDTO.getMeta().getId()
                         ))
                         .toList()
                         .toObservable());

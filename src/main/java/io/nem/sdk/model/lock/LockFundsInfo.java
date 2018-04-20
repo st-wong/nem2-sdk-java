@@ -27,13 +27,15 @@ public class LockFundsInfo {
     private final BigInteger expirationHeight;
     private final LockStatus status;
     private final String hash;
+    private final String metaId;
 
-    public LockFundsInfo(PublicAccount account, Mosaic mosaic, BigInteger expirationHeight, LockStatus status, String hash) {
+    public LockFundsInfo(PublicAccount account, Mosaic mosaic, BigInteger expirationHeight, LockStatus status, String hash, String metaId) {
         this.account = account;
         this.mosaic = mosaic;
         this.expirationHeight = expirationHeight;
         this.status = status;
         this.hash = hash;
+        this.metaId = metaId;
     }
 
     public PublicAccount getAccount() { return account; }
@@ -45,4 +47,6 @@ public class LockFundsInfo {
     public LockStatus getStatus() { return status; }
 
     public String getHash() { return hash; }
+
+    public String getMetaId() { return metaId; }
 }

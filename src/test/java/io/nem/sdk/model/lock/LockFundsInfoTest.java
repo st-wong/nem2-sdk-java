@@ -20,13 +20,15 @@ public class LockFundsInfoTest {
         BigInteger expirationHeight = BigInteger.valueOf(0);
         LockStatus lockStatus = LockStatus.USED;
         String hash = "b4f12e7c9f6946091e2cb8b6d3a12b50d17ccbbf646386ea27ce2946a7423dcf";
+        String metaId = "5ad9c23ca17289a20d88ca6a";
 
-        LockFundsInfo lockFundsInfo = new LockFundsInfo(publicAccount, mosaic, expirationHeight, lockStatus, hash);
+        LockFundsInfo lockFundsInfo = new LockFundsInfo(publicAccount, mosaic, expirationHeight, lockStatus, hash, metaId);
 
         assertEquals(publicAccount, lockFundsInfo.getAccount());
         assertEquals(mosaic, lockFundsInfo.getMosaic());
         assertEquals(expirationHeight, lockFundsInfo.getExpirationHeight());
         assertEquals(lockStatus, lockFundsInfo.getStatus());
         assertEquals(hash, lockFundsInfo.getHash());
+        assertEquals(metaId, lockFundsInfo.getMetaId());
     }
 }

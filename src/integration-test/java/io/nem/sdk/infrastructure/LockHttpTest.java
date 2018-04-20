@@ -40,7 +40,7 @@ class LockHttpTest extends BaseTest {
 
     @Test
     void getLockFunds() throws ExecutionException, InterruptedException {
-        String hash = "ADF6E45D8C21BC3B835A2C3ABAC90800A270601F0B1361BC46C26E00968105E6";
+        String hash = "9253B3165DF4D4FC0CE831F104BFCFDDAF50A6E36D1BAD35F234AFA0F32B29D6";
         LockFundsInfo lockFundsInfo = lockHttp
                 .getLockFunds(hash)
                 .toFuture()
@@ -51,8 +51,8 @@ class LockHttpTest extends BaseTest {
 
     @Test
     void getSecretLock() throws ExecutionException, InterruptedException {
-        String secret = "E70D37DA074D5F2CEF6BCE7E3E06D3D7E42E5A653EDDE49EDEB0628C295883CE6685494F" +
-                "E64B835762BB2D5959AE48F87501E7DB3B826B4C1BA9D3BA70BC5DC5";
+        String secret = "05C489CAA2D96764AE684B489DF83994F3331D4E964580A1B17943E60131CB895E06" +
+            "24987B646C99FA3823F0E49273401E138E3D100FA424FF15F57183467D1D";
         SecretLockInfo secretLockInfo = lockHttp
                 .getSecretLock(secret)
                 .toFuture()
@@ -63,7 +63,7 @@ class LockHttpTest extends BaseTest {
 
     @Test
     void getLockFundsInfoFromAccount() throws ExecutionException, InterruptedException {
-        Address address = Address.createFromRawAddress("SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY");
+        Address address = Address.createFromRawAddress("SCTVW23D2MN5VE4AQ4TZIDZENGNOZXPRPRLIKCF2");
         List<LockFundsInfo> lockFundsInfo = lockHttp
                 .getLockFundsInfoFromAccount(address)
                 .toFuture()
@@ -75,7 +75,7 @@ class LockHttpTest extends BaseTest {
 
     @Test
     void getSecretLocksInfoFromAccount() throws ExecutionException, InterruptedException {
-        Address address = Address.createFromRawAddress("SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY");
+        Address address = Address.createFromRawAddress("SCTVW23D2MN5VE4AQ4TZIDZENGNOZXPRPRLIKCF2");
         List<SecretLockInfo> secretLocksInfo = lockHttp
                 .getSecretLocksInfoFromAccount(address)
                 .toFuture()

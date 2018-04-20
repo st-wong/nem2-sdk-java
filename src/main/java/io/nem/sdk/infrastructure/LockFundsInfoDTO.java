@@ -27,22 +27,22 @@
  */
 
 
-
 package io.nem.sdk.infrastructure;
 
+import java.util.Objects;
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Objects;
-
 
 /**
  * LockFundsInfoDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-19T12:25:00.783Z")
 public class LockFundsInfoDTO {
   @SerializedName("lock")
   private LockFundsDTO lock = null;
+
+  @SerializedName("meta")
+  private LockMetaDTO meta = null;
 
   public LockFundsInfoDTO lock(LockFundsDTO lock) {
     this.lock = lock;
@@ -62,6 +62,24 @@ public class LockFundsInfoDTO {
     this.lock = lock;
   }
 
+  public LockFundsInfoDTO meta(LockMetaDTO meta) {
+    this.meta = meta;
+    return this;
+  }
+
+   /**
+   * Get meta
+   * @return meta
+  **/
+  @ApiModelProperty(value = "")
+  public LockMetaDTO getMeta() {
+    return meta;
+  }
+
+  public void setMeta(LockMetaDTO meta) {
+    this.meta = meta;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -72,12 +90,13 @@ public class LockFundsInfoDTO {
       return false;
     }
     LockFundsInfoDTO lockFundsInfoDTO = (LockFundsInfoDTO) o;
-    return Objects.equals(this.lock, lockFundsInfoDTO.lock);
+    return Objects.equals(this.lock, lockFundsInfoDTO.lock) &&
+        Objects.equals(this.meta, lockFundsInfoDTO.meta);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(lock);
+    return Objects.hash(lock, meta);
   }
 
 
@@ -87,6 +106,7 @@ public class LockFundsInfoDTO {
     sb.append("class LockFundsInfoDTO {\n");
     
     sb.append("    lock: ").append(toIndentedString(lock)).append("\n");
+    sb.append("    meta: ").append(toIndentedString(meta)).append("\n");
     sb.append("}");
     return sb.toString();
   }

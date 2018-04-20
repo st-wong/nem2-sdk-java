@@ -33,52 +33,30 @@ import java.util.Objects;
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
 
-
 /**
- * SecretLockInfoDTO
+ * LockMetaDTO
  */
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-19T12:25:00.783Z")
-public class SecretLockInfoDTO {
-  @SerializedName("lock")
-  private SecretLockDTO lock = null;
+public class LockMetaDTO {
+  @SerializedName("id")
+  private String id = null;
 
-  @SerializedName("meta")
-  private LockMetaDTO meta = null;
-
-  public SecretLockInfoDTO lock(SecretLockDTO lock) {
-    this.lock = lock;
+  public LockMetaDTO id(String id) {
+    this.id = id;
     return this;
   }
 
    /**
-   * Get lock
-   * @return lock
+   * Get id
+   * @return id
   **/
   @ApiModelProperty(required = true, value = "")
-  public SecretLockDTO getLock() {
-    return lock;
+  public String getId() {
+    return id;
   }
 
-  public void setLock(SecretLockDTO lock) {
-    this.lock = lock;
-  }
-
-  public SecretLockInfoDTO meta(LockMetaDTO meta) {
-    this.meta = meta;
-    return this;
-  }
-
-   /**
-   * Get meta
-   * @return meta
-  **/
-  @ApiModelProperty(value = "")
-  public LockMetaDTO getMeta() {
-    return meta;
-  }
-
-  public void setMeta(LockMetaDTO meta) {
-    this.meta = meta;
+  public void setId(String id) {
+    this.id = id;
   }
 
 
@@ -90,24 +68,22 @@ public class SecretLockInfoDTO {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SecretLockInfoDTO secretLockInfoDTO = (SecretLockInfoDTO) o;
-    return Objects.equals(this.lock, secretLockInfoDTO.lock) &&
-        Objects.equals(this.meta, secretLockInfoDTO.meta);
+    LockMetaDTO lockMetaDTO = (LockMetaDTO) o;
+    return Objects.equals(this.id, lockMetaDTO.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(lock, meta);
+    return Objects.hash(id);
   }
 
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class SecretLockInfoDTO {\n");
+    sb.append("class LockMetaDTO {\n");
     
-    sb.append("    lock: ").append(toIndentedString(lock)).append("\n");
-    sb.append("    meta: ").append(toIndentedString(meta)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("}");
     return sb.toString();
   }

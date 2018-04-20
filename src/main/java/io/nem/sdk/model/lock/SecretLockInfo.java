@@ -31,8 +31,9 @@ public class SecretLockInfo {
     private final HashType hashType;
     private final String secret;
     private final Address recipient;
+    private final String metaId;
 
-    public SecretLockInfo(PublicAccount account, Mosaic mosaic, BigInteger expirationHeight, LockStatus status, HashType hashType, String secret, Address recipient) {
+    public SecretLockInfo(PublicAccount account, Mosaic mosaic, BigInteger expirationHeight, LockStatus status, HashType hashType, String secret, Address recipient, String metaId) {
         this.account = account;
         this.mosaic = mosaic;
         this.expirationHeight = expirationHeight;
@@ -40,6 +41,7 @@ public class SecretLockInfo {
         this.hashType = hashType;
         this.secret = secret;
         this.recipient = recipient;
+        this.metaId = metaId;
     }
 
     public PublicAccount getAccount() { return account; }
@@ -55,5 +57,7 @@ public class SecretLockInfo {
     public String getSecret() { return secret; }
 
     public Address getRecipient() { return recipient; }
+
+    public String getMetaId() { return metaId; }
 }
 

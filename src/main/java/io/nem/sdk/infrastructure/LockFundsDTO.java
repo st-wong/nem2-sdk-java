@@ -27,19 +27,16 @@
  */
 
 
-
 package io.nem.sdk.infrastructure;
 
+import java.util.Objects;
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Objects;
-
 
 /**
  * LockFundsDTO
  */
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-02T21:52:15.588Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaClientCodegen", date = "2018-04-19T12:25:00.783Z")
 public class LockFundsDTO {
   @SerializedName("account")
   private String account = null;

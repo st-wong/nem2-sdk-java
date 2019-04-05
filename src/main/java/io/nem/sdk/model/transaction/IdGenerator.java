@@ -17,23 +17,22 @@
 package io.nem.sdk.model.transaction;
 
 import io.nem.core.crypto.Hashes;
+import io.nem.core.utils.ByteUtils;
 import io.nem.sdk.model.mosaic.IllegalIdentifierException;
 import org.apache.commons.lang.ArrayUtils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-
 public class IdGenerator {
 
-    public static BigInteger generateId(String name, BigInteger parentId) {
-        byte[] parentIdBytes = new byte[8];
-        ByteBuffer.wrap(parentIdBytes).put(parentId.toByteArray()); // GO
-        ArrayUtils.reverse(parentIdBytes);
+    public static long generateId(String name, long parentId) {
+        byte[] parentIdBytes = ByteUtils.longToBytes(parentId, ByteOrder.LITTLE_ENDIAN);
 
         byte[] bytes = name.getBytes();
 
@@ -45,12 +44,12 @@ public class IdGenerator {
 
         byte[] last = ArrayUtils.addAll(high, low);
 
-        return new BigInteger(last);
+        return ByteUtils.bytesToLong(last, ByteOrder.LITTLE_ENDIAN);
     }
 
-    public static List<BigInteger> generateNamespacePath(String name) {
+    public static List<Long> generateNamespacePath(String name) {
         String[] parts = name.split(Pattern.quote("."));
-        List<BigInteger> path = new ArrayList<BigInteger>();
+        List<Long> path = new ArrayList<>();
 
         if (parts.length == 0) {
             throw new IllegalIdentifierException("invalid namespace name");
@@ -58,7 +57,7 @@ public class IdGenerator {
             throw new IllegalIdentifierException("too many parts");
         }
 
-        BigInteger namespaceId = BigInteger.valueOf(0);
+        long namespaceId = 0;
 
 
         for (int i = 0; i < parts.length; i++) {
@@ -72,21 +71,21 @@ public class IdGenerator {
         return path;
     }
 
-    public static BigInteger generateNamespaceId(String namespaceName) {
-        List<BigInteger> namespacePath = generateNamespacePath(namespaceName);
+    public static long generateNamespaceId(String namespaceName) {
+        List<Long> namespacePath = generateNamespacePath(namespaceName);
         return namespacePath.get(namespacePath.size() - 1);
     }
 
-    public static BigInteger generateSubNamespaceIdFromParentId(BigInteger parentId, String namespaceName) {
+    public static long generateSubNamespaceIdFromParentId(long parentId, String namespaceName) {
         return generateId(namespaceName, parentId);
     }
 
-    public static BigInteger generateMosaicId(String namespaceName, String mosaicName) {
+    public static long generateMosaicId(String namespaceName, String mosaicName) {
         if (mosaicName.length() == 0) {
             throw new IllegalIdentifierException("having zero length");
         }
-        List<BigInteger> namespacePath = generateNamespacePath(namespaceName);
-        BigInteger namespaceId = namespacePath.get(namespacePath.size() - 1);
+        List<Long> namespacePath = generateNamespacePath(namespaceName);
+        long namespaceId = namespacePath.get(namespacePath.size() - 1);
 
         if (!mosaicName.matches("^[a-z0-9][a-z0-9-_]*$")) {
             throw new IllegalIdentifierException("invalid mosaic name");

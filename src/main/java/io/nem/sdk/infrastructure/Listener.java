@@ -122,7 +122,7 @@ public class Listener {
                             new TransactionStatusError(
                                     message.getString("hash"),
                                     message.getString("status"),
-                                    new Deadline(extractBigInteger(message.getJsonArray("deadline")))
+                                    new Deadline(extractBigInteger(message.getJsonArray("deadline")).longValue())
                             )
                     ));
                 } else if (message.containsKey("meta")) {
@@ -322,8 +322,8 @@ public class Listener {
     private boolean transactionHasSignerOrReceptor(final Transaction transaction, final Address address) {
         boolean isReceptor = false;
         if (transaction instanceof TransferTransaction) {
-            isReceptor = ((TransferTransaction) transaction).getRecipient().equals(address);
+            isReceptor = ((TransferTransaction) transaction).getTransferTransactionBody().getRecipient().equals(address);
         }
-        return transaction.getSigner().get().getAddress().equals(address) || isReceptor;
+        return transaction.getEntityBody().getSigner().get().getAddress().equals(address) || isReceptor;
     }
 }

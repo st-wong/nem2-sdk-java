@@ -28,13 +28,13 @@ import java.util.Optional;
  * @since 1.0
  */
 public class NamespaceId {
-    private final BigInteger id;
+    private final long id;
     private final Optional<String> fullName;
 
     /**
      * Create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
      *
-     * @param id
+     * @param id of namespace
      */
     public NamespaceId(String id) {
         this.id = IdGenerator.generateNamespaceId(id);
@@ -42,21 +42,21 @@ public class NamespaceId {
     }
 
     /**
-     * Create NamespaceId from biginteger id
+     * Create NamespaceId from long id
      *
-     * @param id
+     * @param id of namespace
      */
-    public NamespaceId(BigInteger id) {
+    public NamespaceId(long id) {
         this.id = id;
         this.fullName = Optional.empty();
     }
 
     /**
-     * Returns namespace biginteger id
+     * Returns namespace long id
      *
-     * @return namespace biginteger id
+     * @return namespace long id
      */
-    public BigInteger getId() {
+    public long getId() {
         return id;
     }
 

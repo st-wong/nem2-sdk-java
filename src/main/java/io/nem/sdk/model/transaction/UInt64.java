@@ -16,7 +16,7 @@
 
 package io.nem.sdk.model.transaction;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

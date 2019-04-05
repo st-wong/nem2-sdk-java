@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.codec.BodyCodec;
 
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
         Observable<NetworkType> networkTypeResolve = getNetworkTypeObservable();
         return networkTypeResolve
                 .flatMap(networkType -> this.client
-                        .getAbs(this.url + "/namespace/" + UInt64.bigIntegerToHex(namespaceId.getId()))
+                        .getAbs(this.url + "/namespace/" + UInt64.bigIntegerToHex(BigInteger.valueOf(namespaceId.getId())))
                         .as(BodyCodec.jsonObject())
                         .rxSend()
                         .toObservable()
@@ -65,10 +66,10 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
                         .map(namespaceInfoDTO -> new NamespaceInfo(namespaceInfoDTO.getMeta().isActive(),
                                 namespaceInfoDTO.getMeta().getIndex(),
                                 namespaceInfoDTO.getMeta().getId(),
-                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType()),
+                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType().byteValue()),
                                 namespaceInfoDTO.getNamespace().getDepth(),
                                 extractLevels(namespaceInfoDTO),
-                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray()),
+                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray().longValue()),
                                 new PublicAccount(namespaceInfoDTO.getNamespace().getOwner(), networkType),
                                 namespaceInfoDTO.getNamespace().getStartHeight().extractIntArray(),
                                 namespaceInfoDTO.getNamespace().getEndHeight().extractIntArray()
@@ -100,10 +101,10 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
                         .map(namespaceInfoDTO -> new NamespaceInfo(namespaceInfoDTO.getMeta().isActive(),
                                 namespaceInfoDTO.getMeta().getIndex(),
                                 namespaceInfoDTO.getMeta().getId(),
-                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType()),
+                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType().byteValue()),
                                 namespaceInfoDTO.getNamespace().getDepth(),
                                 extractLevels(namespaceInfoDTO),
-                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray()),
+                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray().longValue()),
                                 new PublicAccount(namespaceInfoDTO.getNamespace().getOwner(), networkType),
                                 namespaceInfoDTO.getNamespace().getStartHeight().extractIntArray(),
                                 namespaceInfoDTO.getNamespace().getEndHeight().extractIntArray()
@@ -139,10 +140,10 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
                         .map(namespaceInfoDTO -> new NamespaceInfo(namespaceInfoDTO.getMeta().isActive(),
                                 namespaceInfoDTO.getMeta().getIndex(),
                                 namespaceInfoDTO.getMeta().getId(),
-                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType()),
+                                NamespaceType.rawValueOf(namespaceInfoDTO.getNamespace().getType().byteValue()),
                                 namespaceInfoDTO.getNamespace().getDepth(),
                                 extractLevels(namespaceInfoDTO),
-                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray()),
+                                new NamespaceId(namespaceInfoDTO.getNamespace().getParentId().extractIntArray().longValue()),
                                 new PublicAccount(namespaceInfoDTO.getNamespace().getOwner(), networkType),
                                 namespaceInfoDTO.getNamespace().getStartHeight().extractIntArray(),
                                 namespaceInfoDTO.getNamespace().getEndHeight().extractIntArray()
@@ -154,7 +155,7 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
     @Override
     public Observable<List<NamespaceName>> getNamespaceNames(List<NamespaceId> namespaceIds) {
         JsonObject requestBody = new JsonObject();
-        requestBody.put("namespaceIds", namespaceIds.stream().map(id -> UInt64.bigIntegerToHex(id.getId())).collect(Collectors.toList()));
+        requestBody.put("namespaceIds", namespaceIds.stream().map(id -> UInt64.bigIntegerToHex(BigInteger.valueOf(id.getId()))).collect(Collectors.toList()));
         return this.client
                 .postAbs(this.url + "/namespace/names")
                 .as(BodyCodec.jsonArray())
@@ -167,12 +168,12 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
                 .map(namespaceNameDTO -> {
                     if (namespaceNameDTO.getParentId() != null) {
                         return new NamespaceName(
-                                new NamespaceId(namespaceNameDTO.getNamespaceId().extractIntArray()),
+                                new NamespaceId(namespaceNameDTO.getNamespaceId().extractIntArray().longValue()),
                                 namespaceNameDTO.getName(),
-                                new NamespaceId(namespaceNameDTO.getParentId().extractIntArray()));
+                                new NamespaceId(namespaceNameDTO.getParentId().extractIntArray().longValue()));
                     } else {
                         return new NamespaceName(
-                                new NamespaceId(namespaceNameDTO.getNamespaceId().extractIntArray()),
+                                new NamespaceId(namespaceNameDTO.getNamespaceId().extractIntArray().longValue()),
                                 namespaceNameDTO.getName());
                     }
                 })
@@ -183,15 +184,15 @@ public class NamespaceHttp extends Http implements NamespaceRepository {
     private List<NamespaceId> extractLevels(NamespaceInfoDTO namespaceInfoDTO) {
         List<NamespaceId> levels = new ArrayList<NamespaceId>();
         if (namespaceInfoDTO.getNamespace().getLevel0() != null) {
-            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel0().extractIntArray()));
+            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel0().extractIntArray().longValue()));
         }
 
         if (namespaceInfoDTO.getNamespace().getLevel1() != null) {
-            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel1().extractIntArray()));
+            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel1().extractIntArray().longValue()));
         }
 
         if (namespaceInfoDTO.getNamespace().getLevel2() != null) {
-            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel2().extractIntArray()));
+            levels.add(new NamespaceId(namespaceInfoDTO.getNamespace().getLevel2().extractIntArray().longValue()));
         }
 
         return levels;

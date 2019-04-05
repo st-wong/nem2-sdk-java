@@ -18,6 +18,7 @@ package io.nem.sdk.model.transaction;
 
 import com.google.flatbuffers.FlatBufferBuilder;
 import io.nem.core.crypto.Signer;
+import io.nem.core.utils.ByteUtils;
 import io.nem.sdk.model.account.Account;
 import io.nem.sdk.model.account.PublicAccount;
 import io.nem.sdk.model.blockchain.NetworkType;
@@ -25,7 +26,11 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.Validate;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutputStream;
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,22 +43,36 @@ import java.util.Optional;
 public class AggregateTransaction extends Transaction {
     private final List<Transaction> innerTransactions;
     private final List<AggregateTransactionCosignature> cosignatures;
-    private final Schema schema = new AggregateTransactionSchema();
 
-    public AggregateTransaction(NetworkType networkType, TransactionType transactionType, Integer version, Deadline deadline, BigInteger fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
-        this(networkType, transactionType, version, deadline, fee, innerTransactions, cosignatures, Optional.of(signature), Optional.of(signer), Optional.of(transactionInfo));
+    AggregateTransaction(NetworkType networkType, Deadline deadline, long max_fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures) {
+        this(networkType, deadline, max_fee, innerTransactions, cosignatures, new VerifiableEntity(Optional.empty()), Optional.empty(), Optional.empty());
     }
 
-    public AggregateTransaction(NetworkType networkType, TransactionType transactionType, Integer version, Deadline deadline, BigInteger fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures) {
-        this(networkType, transactionType, version, deadline, fee, innerTransactions, cosignatures, Optional.empty(), Optional.empty(), Optional.empty());
+    public AggregateTransaction(NetworkType networkType, Deadline deadline, long max_fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
+        this(networkType, deadline, max_fee, innerTransactions, cosignatures, new VerifiableEntity(Optional.of(signature)), Optional.of(signer), Optional.of(transactionInfo));
     }
 
-    private AggregateTransaction(NetworkType networkType, TransactionType transactionType, Integer version, Deadline deadline, BigInteger fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures, Optional<String> signature, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
-        super(transactionType, networkType, version, deadline, fee, signature, signer, transactionInfo);
+    AggregateTransaction(NetworkType networkType, Deadline deadline, long max_fee, List<Transaction> innerTransactions, List<AggregateTransactionCosignature> cosignatures, VerifiableEntity verifiableEntity, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
+        super(new SizePrefixedEntity(120 + 4 + innerTransactions.size()), new EntityBody(networkType, (short)2, EntityType.AGGREGATE_BONDED, signer), deadline, max_fee, verifiableEntity, transactionInfo);
         Validate.notNull(innerTransactions, "InnerTransactions must not be null");
         Validate.notNull(cosignatures, "Cosignatures must not be null");
         this.innerTransactions = innerTransactions;
         this.cosignatures = cosignatures;
+    }
+
+    AggregateTransaction(final DataInput inputStream) throws Exception {
+        super(inputStream);
+        int size = ByteUtils.streamToInt(inputStream, ByteOrder.LITTLE_ENDIAN);
+        this.innerTransactions = new ArrayList<>(size);
+        this.cosignatures = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            Transaction transaction = Transaction.loadFromBinary(inputStream);
+            innerTransactions.add(transaction);
+        }
+        for (int i = 0; i < size; i++) {
+            AggregateTransactionCosignature cosignature = AggregateTransactionCosignature.loadFromBinary(inputStream, this.getEntityBody().getNetworkType());
+            cosignatures.add(cosignature);
+        }
     }
 
     /**
@@ -65,7 +84,7 @@ public class AggregateTransaction extends Transaction {
      * @return {@link AggregateTransaction}
      */
     public static AggregateTransaction createComplete(Deadline deadline, List<Transaction> innerTransactions, NetworkType networkType) {
-        return new AggregateTransaction(networkType, TransactionType.AGGREGATE_COMPLETE,2, deadline, BigInteger.valueOf(0), innerTransactions, new ArrayList<>());
+        return new AggregateTransaction(networkType, deadline, 0, innerTransactions, new ArrayList<>());
     }
 
     /**
@@ -77,7 +96,7 @@ public class AggregateTransaction extends Transaction {
      * @return {@link AggregateTransaction}
      */
     public static AggregateTransaction createBonded(Deadline deadline, List<Transaction> innerTransactions, NetworkType networkType) {
-        return new AggregateTransaction(networkType, TransactionType.AGGREGATE_BONDED,2, deadline, BigInteger.valueOf(0), innerTransactions, new ArrayList<>());
+        return new AggregateTransaction(networkType, deadline, 0, innerTransactions, new ArrayList<>());
     }
 
     /**
@@ -94,40 +113,19 @@ public class AggregateTransaction extends Transaction {
      */
     public List<AggregateTransactionCosignature> getCosignatures() { return cosignatures; }
 
-    byte[] generateBytes() {
-        FlatBufferBuilder builder = new FlatBufferBuilder();
-        BigInteger deadlineBigInt = BigInteger.valueOf(getDeadline().getInstant());
-        int[] fee = new int[]{0, 0};
-        int version = (int) Long.parseLong(Integer.toHexString(getNetworkType().getValue()) + "0" + Integer.toHexString(getVersion()), 16);
+    public static AggregateTransaction loadFromBinary(final DataInput inputStream) throws Exception { return new AggregateTransaction(inputStream); }
 
-        byte[] transactionsBytes = new byte[0];
-        for (Transaction innerTransaction : innerTransactions) {
-            byte[] transactionBytes = innerTransaction.toAggregateTransactionBytes();
-            transactionsBytes = ArrayUtils.addAll(transactionsBytes, transactionBytes);
+    public byte[] serialize() throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        DataOutputStream stream = new DataOutputStream(byteArrayOutputStream);
+        stream.write(super.serialize());
+        stream.write(ByteUtils.intToBytes(innerTransactions.size(), ByteOrder.LITTLE_ENDIAN));
+        for (int i = 0; i < this.innerTransactions.size(); i++) {
+            byte[] transaction = this.innerTransactions.get(i).serialize();
+            stream.write(transaction, 0, transaction.length);
         }
-
-        // Create Vectors
-        int signatureVector = AggregateTransactionBuffer.createSignatureVector(builder, new byte[64]);
-        int signerVector = AggregateTransactionBuffer.createSignerVector(builder, new byte[32]);
-        int deadlineVector = AggregateTransactionBuffer.createDeadlineVector(builder, UInt64.fromBigInteger(deadlineBigInt));
-        int feeVector = AggregateTransactionBuffer.createFeeVector(builder, fee);
-        int transactionsVector = AggregateTransactionBuffer.createTransactionsVector(builder, transactionsBytes);
-
-        AggregateTransactionBuffer.startAggregateTransactionBuffer(builder);
-        AggregateTransactionBuffer.addSize(builder, 120 + 4 + transactionsBytes.length);
-        AggregateTransactionBuffer.addSignature(builder, signatureVector);
-        AggregateTransactionBuffer.addSigner(builder, signerVector);
-        AggregateTransactionBuffer.addVersion(builder, version);
-        AggregateTransactionBuffer.addType(builder, getType().getValue());
-        AggregateTransactionBuffer.addFee(builder, feeVector);
-        AggregateTransactionBuffer.addDeadline(builder, deadlineVector);
-        AggregateTransactionBuffer.addTransactionsSize(builder, transactionsBytes.length);
-        AggregateTransactionBuffer.addTransactions(builder, transactionsVector);
-
-        int codedTransaction = AggregateTransactionBuffer.endAggregateTransactionBuffer(builder);
-        builder.finish(codedTransaction);
-
-        return schema.serialize(builder.sizedByteArray());
+        stream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 
     /**
@@ -137,7 +135,7 @@ public class AggregateTransaction extends Transaction {
      * @param cosignatories    The list of accounts that will cosign the transaction
      * @return {@link SignedTransaction}
      */
-    public SignedTransaction signTransactionWithCosigners(Account initiatorAccount, List<Account> cosignatories) {
+    public SignedTransaction signTransactionWithCosigners(Account initiatorAccount, List<Account> cosignatories) throws Exception {
         SignedTransaction signedTransaction = this.signWith(initiatorAccount);
         String payload = signedTransaction.getPayload();
 
@@ -155,7 +153,7 @@ public class AggregateTransaction extends Transaction {
 
         System.arraycopy(size, 0, payloadBytes, 0, size.length);
 
-        return new SignedTransaction(Hex.toHexString(payloadBytes), signedTransaction.getHash(), getType());
+        return new SignedTransaction(Hex.toHexString(payloadBytes), signedTransaction.getHash(), getEntityBody().getEntityType());
     }
 
     /**
@@ -165,6 +163,6 @@ public class AggregateTransaction extends Transaction {
      * @return boolean
      */
     public boolean signedByAccount(PublicAccount publicAccount) {
-        return this.getSigner().get().equals(publicAccount) || this.getCosignatures().stream().anyMatch(o -> o.getSigner().equals(publicAccount));
+        return this.getEntityBody().getSigner().get().equals(publicAccount) || this.getCosignatures().stream().anyMatch(o -> o.getSigner().equals(publicAccount));
     }
 }

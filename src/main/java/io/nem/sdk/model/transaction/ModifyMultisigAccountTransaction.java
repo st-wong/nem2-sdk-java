@@ -16,131 +16,46 @@
 
 package io.nem.sdk.model.transaction;
 
-import com.google.flatbuffers.FlatBufferBuilder;
-import io.nem.core.utils.HexEncoder;
 import io.nem.sdk.model.account.PublicAccount;
 import io.nem.sdk.model.blockchain.NetworkType;
-import org.apache.commons.lang3.Validate;
 
-import java.math.BigInteger;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutputStream;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Modify multisig account transactions are part of the NEM's multisig account system.
- * A modify multisig account transaction holds an array of multisig cosignatory modifications, min number of signatures to approve a transaction and a min number of signatures to remove a cosignatory.
- *
- * @since 1.0
- */
 public class ModifyMultisigAccountTransaction extends Transaction {
-    private final int minApprovalDelta;
-    private final int minRemovalDelta;
-    private final List<MultisigCosignatoryModification> modifications;
-    private final Schema schema = new ModifyMultisigAccountTransactionSchema();
+    private final ModifyMultisigAccountTransactionBody modifyMultisigAccountTransactionBody;
 
-    public ModifyMultisigAccountTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, int minApprovalDelta, int minRemovalDelta, List<MultisigCosignatoryModification> modifications, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
-        this(networkType, version, deadline, fee, minApprovalDelta, minRemovalDelta, modifications, Optional.of(signature), Optional.of(signer), Optional.of(transactionInfo));
+    ModifyMultisigAccountTransaction(NetworkType networkType, Deadline deadline, long max_fee, byte minRemovalDelta, byte minApprovalDelta, List<CosignatoryModification> cosignatoryModifications) {
+        this(networkType, deadline, max_fee, minRemovalDelta, minApprovalDelta, cosignatoryModifications, new VerifiableEntity(Optional.empty()), Optional.empty(), Optional.empty());
     }
 
-    public ModifyMultisigAccountTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, int minApprovalDelta, int minRemovalDelta, List<MultisigCosignatoryModification> modifications) {
-        this(networkType, version, deadline, fee, minApprovalDelta, minRemovalDelta, modifications, Optional.empty(), Optional.empty(), Optional.empty());
+    public ModifyMultisigAccountTransaction(NetworkType networkType, Deadline deadline, long max_fee, byte minRemovalDelta, byte minApprovalDelta, List<CosignatoryModification> cosignatoryModifications, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
+        this(networkType, deadline, max_fee, minRemovalDelta, minApprovalDelta, cosignatoryModifications, new VerifiableEntity(signature), Optional.of(signer), Optional.of(transactionInfo));
     }
 
-    private ModifyMultisigAccountTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, int minApprovalDelta, int minRemovalDelta, List<MultisigCosignatoryModification> modifications, Optional<String> signature, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
-        super(TransactionType.MODIFY_MULTISIG_ACCOUNT, networkType, version, deadline, fee, signature, signer, transactionInfo);
-        Validate.notNull(modifications, "Modifications must not be null");
-        this.minApprovalDelta = minApprovalDelta;
-        this.minRemovalDelta = minRemovalDelta;
-        this.modifications = modifications;
+    ModifyMultisigAccountTransaction(NetworkType networkType, Deadline deadline, long max_fee, byte minRemovalDelta, byte minApprovalDelta, List<CosignatoryModification> cosignatoryModifications, VerifiableEntity verifiableEntity, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
+        super(new SizePrefixedEntity(123 * (33 * cosignatoryModifications.size())), new EntityBody(networkType, (short)3, EntityType.MODIFY_MULTISIG_ACCOUNT, signer), deadline, max_fee, verifiableEntity, transactionInfo);
+        this.modifyMultisigAccountTransactionBody = new ModifyMultisigAccountTransactionBody(minRemovalDelta, minApprovalDelta, cosignatoryModifications);
     }
 
-    /**
-     * Create a modify multisig account transaction object.
-     *
-     * @param deadline         The deadline to include the transaction.
-     * @param minApprovalDelta The min approval relative change.
-     * @param minRemovalDelta  The min removal relative change.
-     * @param modifications    The list of modifications.
-     * @param networkType      The network type.
-     * @return {@link ModifyMultisigAccountTransaction}
-     */
-
-    public static ModifyMultisigAccountTransaction create(Deadline deadline, int minApprovalDelta, int minRemovalDelta, List<MultisigCosignatoryModification> modifications, NetworkType networkType) {
-        return new ModifyMultisigAccountTransaction(networkType, 3, deadline, BigInteger.valueOf(0), minApprovalDelta, minRemovalDelta, modifications);
+    ModifyMultisigAccountTransaction(final DataInput inputStream) throws Exception {
+        super(inputStream);
+        this.modifyMultisigAccountTransactionBody = ModifyMultisigAccountTransactionBody.loadFromBinary(inputStream);
     }
 
-    /**
-     * Return number of signatures needed to approve a transaction.
-     * If we are modifying and existing multi-signature account this indicates the relative change of the minimum cosignatories.
-     *
-     * @return int
-     */
-    public int getMinApprovalDelta() {
-        return minApprovalDelta;
-    }
+    public ModifyMultisigAccountTransactionBody getModifyMultisigAccountTransactionBody() { return this.modifyMultisigAccountTransactionBody; }
 
-    /**
-     * Return number of signatures needed to remove a cosignatory.
-     * If we are modifying and existing multi-signature account this indicates the relative change of the minimum cosignatories.
-     *
-     * @return int
-     */
-    public int getMinRemovalDelta() {
-        return minRemovalDelta;
-    }
+    public static ModifyMultisigAccountTransaction loadFromBinary(final DataInput inputStream) throws Exception { return new ModifyMultisigAccountTransaction(inputStream); }
 
-    /**
-     * The List of cosigner accounts added or removed from the multi-signature account.
-     *
-     * @return List<{ @ link   MultisigCosignatoryModification }>
-     */
-    public List<MultisigCosignatoryModification> getModifications() {
-        return modifications;
-    }
-
-    byte[] generateBytes() {
-        FlatBufferBuilder builder = new FlatBufferBuilder();
-        BigInteger deadlineBigInt = BigInteger.valueOf(getDeadline().getInstant());
-        int[] fee = new int[]{0, 0};
-        int version = (int) Long.parseLong(Integer.toHexString(getNetworkType().getValue()) + "0" + Integer.toHexString(getVersion()), 16);
-
-        // Create Modifications
-        int[] modificationsBuffers = new int[modifications.size()];
-        for (int i = 0; i < modifications.size(); ++i) {
-            MultisigCosignatoryModification multisigCosignatoryModification = modifications.get(i);
-            byte[] byteCosignatoryPublicKey = HexEncoder.getBytes(multisigCosignatoryModification.getCosignatoryPublicAccount().getPublicKey());
-            int cosignatoryPublicKey = CosignatoryModificationBuffer.createCosignatoryPublicKeyVector(builder, byteCosignatoryPublicKey);
-            CosignatoryModificationBuffer.startCosignatoryModificationBuffer(builder);
-            CosignatoryModificationBuffer.addType(builder, multisigCosignatoryModification.getType().getValue());
-            CosignatoryModificationBuffer.addCosignatoryPublicKey(builder, cosignatoryPublicKey);
-            modificationsBuffers[i] = CosignatoryModificationBuffer.endCosignatoryModificationBuffer(builder);
-        }
-
-        // Create Vectors
-        int signatureVector = MultisigAggregateModificationTransactionBuffer.createSignatureVector(builder, new byte[64]);
-        int signerVector = MultisigAggregateModificationTransactionBuffer.createSignerVector(builder, new byte[32]);
-        int deadlineVector = MultisigAggregateModificationTransactionBuffer.createDeadlineVector(builder, UInt64.fromBigInteger(deadlineBigInt));
-        int feeVector = MultisigAggregateModificationTransactionBuffer.createFeeVector(builder, fee);
-        int modificationsVector = TransferTransactionBuffer.createMosaicsVector(builder, modificationsBuffers);
-
-        int fixSize = 123; // replace by the all numbers sum or add a comment explaining this
-
-        MultisigAggregateModificationTransactionBuffer.startMultisigAggregateModificationTransactionBuffer(builder);
-        MultisigAggregateModificationTransactionBuffer.addSize(builder, fixSize + (33 * modifications.size()));
-        MultisigAggregateModificationTransactionBuffer.addSignature(builder, signatureVector);
-        MultisigAggregateModificationTransactionBuffer.addSigner(builder, signerVector);
-        MultisigAggregateModificationTransactionBuffer.addVersion(builder, version);
-        MultisigAggregateModificationTransactionBuffer.addType(builder, getType().getValue());
-        MultisigAggregateModificationTransactionBuffer.addFee(builder, feeVector);
-        MultisigAggregateModificationTransactionBuffer.addDeadline(builder, deadlineVector);
-        MultisigAggregateModificationTransactionBuffer.addMinApprovalDelta(builder, minApprovalDelta);
-        MultisigAggregateModificationTransactionBuffer.addMinRemovalDelta(builder, minRemovalDelta);
-        MultisigAggregateModificationTransactionBuffer.addNumModifications(builder, modifications.size());
-        MultisigAggregateModificationTransactionBuffer.addModifications(builder, modificationsVector);
-
-        int codedTransaction = MultisigAggregateModificationTransactionBuffer.endMultisigAggregateModificationTransactionBuffer(builder);
-        builder.finish(codedTransaction);
-
-        return schema.serialize(builder.sizedByteArray());
+    public byte[] serialize() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream stream = new DataOutputStream(bos);
+        stream.write(super.serialize());
+        stream.write(this.modifyMultisigAccountTransactionBody.serialize());
+        stream.close();
+        return bos.toByteArray();
     }
 }

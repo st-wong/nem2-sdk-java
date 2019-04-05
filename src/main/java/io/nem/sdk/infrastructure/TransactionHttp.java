@@ -84,7 +84,7 @@ public class TransactionHttp extends Http implements TransactionRepository {
                 .map(transactionStatusDTO -> new TransactionStatus(transactionStatusDTO.getGroup(),
                         transactionStatusDTO.getStatus(),
                         transactionStatusDTO.getHash(),
-                        new Deadline(transactionStatusDTO.getDeadline().extractIntArray()),
+                        new Deadline(transactionStatusDTO.getDeadline().extractIntArray().longValue()),
                         transactionStatusDTO.getHeight().extractIntArray()));
     }
 
@@ -104,7 +104,7 @@ public class TransactionHttp extends Http implements TransactionRepository {
                 .map(transactionStatusDTO -> new TransactionStatus(transactionStatusDTO.getGroup(),
                         transactionStatusDTO.getStatus(),
                         transactionStatusDTO.getHash(),
-                        new Deadline(transactionStatusDTO.getDeadline().extractIntArray()),
+                        new Deadline(transactionStatusDTO.getDeadline().extractIntArray().longValue()),
                         transactionStatusDTO.getHeight().extractIntArray()))
                 .toList()
                 .toObservable();

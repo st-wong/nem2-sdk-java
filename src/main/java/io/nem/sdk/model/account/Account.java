@@ -84,7 +84,7 @@ public class Account {
      * @return {@link KeyPair}
      */
     public KeyPair getKeyPair() {
-        return keyPair;
+        return this.keyPair;
     }
 
     /**
@@ -102,7 +102,7 @@ public class Account {
      * @return {@link PublicAccount}
      */
     public PublicAccount getPublicAccount() {
-        return publicAccount;
+        return this.publicAccount;
     }
 
     /**
@@ -111,9 +111,7 @@ public class Account {
      * @param transaction The transaction to be signed.
      * @return {@link SignedTransaction}
      */
-    public SignedTransaction sign(Transaction transaction) {
-        return transaction.signWith(this);
-    }
+    public SignedTransaction sign(Transaction transaction) throws Exception { return transaction.signWith(this); }
 
     /**
      * Sign aggregate signature transaction.
@@ -132,7 +130,7 @@ public class Account {
      * @param cosignatories The list of accounts that will cosign the transaction
      * @return {@link SignedTransaction}
      */
-    public SignedTransaction signTransactionWithCosignatories(AggregateTransaction transaction, List<Account> cosignatories) {
+    public SignedTransaction signTransactionWithCosignatories(AggregateTransaction transaction, List<Account> cosignatories) throws Exception {
         return transaction.signTransactionWithCosigners(this, cosignatories);
     }
 }

@@ -19,7 +19,6 @@ package io.nem.sdk.infrastructure;
 import io.nem.sdk.model.account.Address;
 import io.nem.sdk.model.namespace.NamespaceType;
 import io.nem.sdk.model.transaction.*;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -224,7 +224,7 @@ public class TransactionMappingTest {
                     transaction.getTransactionInfo().get().getAggregateId().get());
         }
 
-        assertEquals(transactionDTO.getJsonObject("transaction").getString("signature"), transaction.getSignature().get());
+        assertEquals(transactionDTO.getJsonObject("transaction").getString("signature"), transaction.getVerifiableEntity().get());
         assertEquals(transactionDTO.getJsonObject("transaction").getString("signer"), transaction.getSigner().get().getPublicKey());
         assertTrue(transaction.getType().getValue() == transactionDTO.getJsonObject("transaction").getInteger("type"));
         int version = (int) Long.parseLong(Integer.toHexString(transactionDTO.getJsonObject("transaction").getInteger("version")).substring(2, 4), 16);
@@ -275,7 +275,7 @@ public class TransactionMappingTest {
                     aggregateTransaction.getTransactionInfo().get().getId().get());
         }
 
-        assertEquals(aggregateTransactionDTO.getJsonObject("transaction").getString("signature"), aggregateTransaction.getSignature().get());
+        assertEquals(aggregateTransactionDTO.getJsonObject("transaction").getString("signature"), aggregateTransaction.getVerifiableEntity().get());
         assertEquals(aggregateTransactionDTO.getJsonObject("transaction").getString("signer"), aggregateTransaction.getSigner().get().getPublicKey());
         int version = (int) Long.parseLong(Integer.toHexString(aggregateTransactionDTO.getJsonObject("transaction").getInteger("version")).substring(2, 4), 16);
         assertTrue(aggregateTransaction.getVersion() == version);
@@ -307,12 +307,8 @@ public class TransactionMappingTest {
                     transaction.getMosaics().get(0).getAmount());
         }
 
-        try {
-            assertEquals(new String(Hex.decode(transactionDTO.getJsonObject("transaction").getJsonObject("message").getString("payload")), "UTF-8"),
-                    transaction.getMessage().getPayload());
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        assertEquals(new String(Hex.decode(transactionDTO.getJsonObject("transaction").getJsonObject("message").getString("payload")), StandardCharsets.UTF_8),
+                transaction.getMessage().getPayload());
 
         assertTrue(transactionDTO.getJsonObject("transaction").getJsonObject("message").getInteger("type") ==
                 transaction.getMessage().getType());

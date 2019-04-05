@@ -16,109 +16,49 @@
 
 package io.nem.sdk.model.transaction;
 
-import com.google.flatbuffers.FlatBufferBuilder;
 import io.nem.sdk.model.account.PublicAccount;
 import io.nem.sdk.model.blockchain.NetworkType;
-import org.apache.commons.lang3.Validate;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutputStream;
 import java.util.Optional;
 
 public class SecretProofTransaction extends Transaction {
-    private final HashType hashType;
-    private final String secret;
-    private final String proof;
-    private final Schema schema = new SecretProofTransactionSchema();
+    private final SecretProofTransactionBody secretProofTransactionBody;
 
-    public SecretProofTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, HashType hashType, String secret, String proof, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
-        this(networkType, version, deadline, fee, hashType, secret, proof, Optional.of(signature), Optional.of(signer), Optional.of(transactionInfo));
+    SecretProofTransaction(NetworkType networkType, Deadline deadline, long max_fee, LockHashAlgorithm lockHashAlgorithm, String secretHash, String proof) {
+        this(networkType, deadline, max_fee, lockHashAlgorithm, secretHash, proof, new VerifiableEntity(Optional.empty()), Optional.empty(), Optional.empty());
     }
 
-    public SecretProofTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, HashType hashType, String secret, String proof) {
-        this(networkType, version, deadline, fee, hashType, secret, proof, Optional.empty(), Optional.empty(), Optional.empty());
+    public SecretProofTransaction(NetworkType networkType, Deadline deadline, long max_fee, LockHashAlgorithm lockHashAlgorithm, String secretHash, String proof, String signature, PublicAccount signer, TransactionInfo transactionInfo) {
+        this(networkType, deadline, max_fee, lockHashAlgorithm, secretHash, proof, new VerifiableEntity(signature), Optional.of(signer), Optional.of(transactionInfo));
     }
 
-    public SecretProofTransaction(NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, HashType hashType, String secret, String proof, Optional<String> signature, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
-        super(TransactionType.SECRET_PROOF, networkType, version, deadline, fee, signature, signer, transactionInfo);
-        Validate.notNull(secret, "Secret must not be null");
-        Validate.notNull(proof, "Proof must not be null");
-        if (!HashType.Validator(hashType, secret)) {
-            throw new IllegalArgumentException("HashType and Secret have incompatible length or not hexadecimal string");
-        }
-        this.hashType = hashType;
-        this.secret = secret;
-        this.proof = proof;
+    SecretProofTransaction(NetworkType networkType, Deadline deadline, long max_fee, LockHashAlgorithm lockHashAlgorithm, String secretHash, String proof, VerifiableEntity verifiableEntity, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
+        super(new SizePrefixedEntity(155 + proof.length()), new EntityBody(networkType, (short)1, EntityType.SECRET_PROOF, signer), deadline, max_fee, verifiableEntity, transactionInfo);
+        this.secretProofTransactionBody = new SecretProofTransactionBody(lockHashAlgorithm, secretHash, proof);
     }
 
-    /**
-     * Create a secret proof transaction object.
-     *
-     * @param deadline          The deadline to include the transaction.
-     * @param hashType          The hash algorithm secret is generated with.
-     * @param secret            The seed proof hashed.
-     * @param proof             The seed proof.
-     * @param networkType       The network type.
-     *
-     * @return a SecretLockTransaction instance
-     */
-    public static SecretProofTransaction create(Deadline deadline, HashType hashType, String secret, String proof, NetworkType networkType) {
-        return new SecretProofTransaction(networkType, 3, deadline, BigInteger.valueOf(0), hashType, secret, proof);
+    SecretProofTransaction(final DataInput inputStream) throws Exception {
+        super(inputStream);
+        this.secretProofTransactionBody = SecretProofTransactionBody.loadFromBinary(inputStream);
     }
 
-    /**
-     * Returns the hash algorithm secret is generated with.
-     *
-     * @return the hash algorithm secret is generated with.
-     */
-    public HashType getHashType() { return hashType; }
+    public static SecretProofTransaction create(Deadline deadline, LockHashAlgorithm lockHashAlgorithm, String secretHash, String proof, NetworkType networkType) {
+        return new SecretProofTransaction(networkType, deadline, 0, lockHashAlgorithm, secretHash, proof);
+    }
 
-    /**
-     * Returns the proof hashed.
-     *
-     * @return the proof hashed.
-     */
-    public String getSecret() { return secret; }
+    public SecretProofTransactionBody getSecretProofTransactionBody()  { return this.secretProofTransactionBody; }
 
-    /**
-     * Returns proof.
-     *
-     * @return proof.
-     */
-    public String getProof() { return proof; }
+    public static SecretProofTransaction loadFromBinary(final DataInput inputStream) throws Exception { return new SecretProofTransaction(inputStream); }
 
-
-    @Override
-    byte[] generateBytes() {
-        FlatBufferBuilder builder = new FlatBufferBuilder();
-        BigInteger deadlineBigInt = BigInteger.valueOf(getDeadline().getInstant());
-        int[] fee = new int[]{0, 0};
-        int version = (int) Long.parseLong(Integer.toHexString(getNetworkType().getValue()) + "0" + Integer.toHexString(getVersion()), 16);
-
-        // Create Vectors
-        int signatureVector = SecretProofTransactionBuffer.createSignatureVector(builder, new byte[64]);
-        int signerVector = SecretProofTransactionBuffer.createSignerVector(builder, new byte[32]);
-        int deadlineVector = SecretProofTransactionBuffer.createDeadlineVector(builder, UInt64.fromBigInteger(deadlineBigInt));
-        int feeVector = SecretProofTransactionBuffer.createFeeVector(builder, fee);
-        int secretVector = SecretProofTransactionBuffer.createSecretVector(builder, Hex.decode(secret));
-        int proofVector = SecretProofTransactionBuffer.createProofVector(builder, Hex.decode(proof));
-
-        SecretProofTransactionBuffer.startSecretProofTransactionBuffer(builder);
-        SecretProofTransactionBuffer.addSize(builder, 187 + Hex.decode(proof).length);
-        SecretProofTransactionBuffer.addSignature(builder, signatureVector);
-        SecretProofTransactionBuffer.addSigner(builder, signerVector);
-        SecretProofTransactionBuffer.addVersion(builder, version);
-        SecretProofTransactionBuffer.addType(builder, getType().getValue());
-        SecretProofTransactionBuffer.addFee(builder, feeVector);
-        SecretProofTransactionBuffer.addDeadline(builder, deadlineVector);
-        SecretProofTransactionBuffer.addHashAlgorithm(builder, hashType.getValue());
-        SecretProofTransactionBuffer.addSecret(builder, secretVector);
-        SecretProofTransactionBuffer.addProofSize(builder, Hex.decode(proof).length);
-        SecretProofTransactionBuffer.addProof(builder, proofVector);
-
-        int codedSecretProof = SecretProofTransactionBuffer.endSecretProofTransactionBuffer(builder);
-        builder.finish(codedSecretProof);
-
-        return schema.serialize(builder.sizedByteArray());
+    public byte[] serialize() throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        DataOutputStream stream = new DataOutputStream(byteArrayOutputStream);
+        stream.write(super.serialize());
+        stream.write(this.secretProofTransactionBody.serialize());
+        stream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 }

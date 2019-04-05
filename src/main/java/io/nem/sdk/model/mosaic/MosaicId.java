@@ -16,11 +16,13 @@
 
 package io.nem.sdk.model.mosaic;
 
-import io.nem.sdk.model.transaction.IdGenerator;
+import io.nem.core.crypto.Hashes;
+import io.nem.core.utils.ByteUtils;
+import io.nem.sdk.model.account.PublicAccount;
 
-import java.math.BigInteger;
+import java.nio.ByteOrder;
+import java.security.SecureRandom;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The mosaic id structure describes mosaic id
@@ -28,52 +30,41 @@ import java.util.Optional;
  * @since 1.0
  */
 public class MosaicId {
-    private final BigInteger id;
-    private final Optional<String> fullName;
+    private final long id;
 
     /**
-     * Create MosaicId from mosaic and namespace string name (ex: nem:xem or domain.subdom.subdome:token)
+     * Create MosaicId from Int nonce
      *
-     * @param id
-     * @throws IllegalIdentifierException MosaicId identifier
+     * @param nonce to generate Mosaic ID
+     * @param owner of Mosaic
      */
-    public MosaicId(String id) {
-        if (id.isEmpty()) throw new IllegalIdentifierException(id + " is not valid");
-        if (!id.contains(":")) throw new IllegalIdentifierException(id + " is not valid");
-        String[] parts = id.split(":");
-        if (parts.length != 2) throw new IllegalIdentifierException(id + " is not valid");
-        String namespaceName = parts[0];
-        String mosaicName = parts[1];
-        this.id = IdGenerator.generateMosaicId(namespaceName, mosaicName);
-        this.fullName = Optional.of(id);
+    public MosaicId(int nonce, PublicAccount owner) {
+        byte[] generateBytes = Hashes.sha3_256(ByteUtils.intToBytes(nonce, ByteOrder.nativeOrder()), owner.getPublicKey().getBytes());
+        id = ByteUtils.bytesToLong(generateBytes, ByteOrder.nativeOrder());
     }
 
     /**
-     * Create MosaicId from biginteger id
+     * Create MosaicId from random nonce
      *
-     * @param id
+     * @param owner of Mosaic
      */
-    public MosaicId(BigInteger id) {
-        this.id = id;
-        this.fullName = Optional.empty();
+
+    public MosaicId(PublicAccount owner) {
+        byte[] generateBytes = Hashes.sha3_256(new SecureRandom().generateSeed(4), owner.getPublicKey().getBytes());
+        id = ByteUtils.bytesToLong(generateBytes, ByteOrder.nativeOrder());
     }
 
+    public MosaicId(long mosaicID) { this.id = mosaicID; }
+
+    public MosaicId(String hexMosaicID) { this.id = Long.parseLong(hexMosaicID, 16); }
+
     /**
-     * Returns mosaic biginteger id
+     * Returns mosaic long id
      *
-     * @return mosaic biginteger id
+     * @return mosaic long id
      */
-    public BigInteger getId() {
+    public long getId() {
         return id;
-    }
-
-    /**
-     * Returns optional mosaic full name, with namespace name (ex: nem:xem)
-     *
-     * @return namespace full name
-     */
-    public Optional<String> getFullName() {
-        return fullName;
     }
 
     /**

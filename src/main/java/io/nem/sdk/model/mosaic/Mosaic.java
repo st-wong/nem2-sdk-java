@@ -16,40 +16,35 @@
 
 package io.nem.sdk.model.mosaic;
 
-import java.math.BigInteger;
+import io.nem.core.utils.ArrayUtils;
+import io.nem.core.utils.ByteUtils;
 
-/**
- * A mosaic describes an instance of a mosaic definition.
- * Mosaics can be transferred by means of a transfer transaction.
- *
- * @since 1.0
- */
+import java.io.DataInput;
+import java.nio.ByteOrder;
+
 public class Mosaic {
-    private final MosaicId id;
-    private final BigInteger amount;
+    private final long mosaicId;
+    private final long amount;
 
-    public Mosaic(MosaicId id, BigInteger amount) {
-        this.id = id;
+    public Mosaic(long mosaicId, long amount) {
+        this.mosaicId = mosaicId;
         this.amount = amount;
     }
 
-
-    /**
-     * Returns the mosaic identifier
-     *
-     * @return mosaic identifier
-     */
-    public MosaicId getId() {
-        return id;
+    Mosaic(DataInput inputStream) throws Exception {
+        this.mosaicId = ByteUtils.streamToLong(inputStream, ByteOrder.LITTLE_ENDIAN);
+        this.amount =ByteUtils.streamToLong(inputStream, ByteOrder.LITTLE_ENDIAN);
     }
 
-    /**
-     * Return mosaic amount. The quantity is always given in smallest units for the mosaic
-     * i.e. if it has a divisibility of 3 the quantity is given in millis.
-     *
-     * @return amount of mosaic
-     */
-    public BigInteger getAmount() {
-        return amount;
+    public long getMosaicId()  { return this.mosaicId; }
+
+    public long getAmount()  { return this.amount; }
+
+    public static Mosaic loadFromBinary(final DataInput inputStream) throws Exception { return new Mosaic(inputStream); }
+
+    public byte[] serialize() {
+        byte[] mosaicIdBytes = ByteUtils.longToBytes(this.mosaicId, ByteOrder.LITTLE_ENDIAN);
+        byte[] amountBytes = ByteUtils.longToBytes(this.amount, ByteOrder.LITTLE_ENDIAN);
+        return ArrayUtils.concat(mosaicIdBytes, amountBytes);
     }
 }

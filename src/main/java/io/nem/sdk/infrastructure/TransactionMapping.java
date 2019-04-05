@@ -16,13 +16,15 @@
 
 package io.nem.sdk.infrastructure;
 
+import io.nem.core.crypto.PublicKey;
 import io.nem.sdk.model.account.Address;
 import io.nem.sdk.model.account.PublicAccount;
+import io.nem.sdk.model.blockchain.BlockDuration;
 import io.nem.sdk.model.blockchain.NetworkType;
 import io.nem.sdk.model.mosaic.Mosaic;
 import io.nem.sdk.model.mosaic.MosaicId;
 import io.nem.sdk.model.mosaic.MosaicProperties;
-import io.nem.sdk.model.mosaic.MosaicSupplyType;
+import io.nem.sdk.model.mosaic.MosaicSupplyChangeDirection;
 import io.nem.sdk.model.namespace.NamespaceId;
 import io.nem.sdk.model.namespace.NamespaceType;
 import io.nem.sdk.model.transaction.*;
@@ -33,6 +35,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,23 +48,23 @@ public class TransactionMapping implements Function<JsonObject, Transaction> {
         JsonObject transaction = input.getJsonObject("transaction");
         int type = transaction.getInteger("type");
 
-        if (type == TransactionType.TRANSFER.getValue()) {
+        if (type == EntityType.TRANSFER.getValue()) {
             return new TransferTransactionMapping().apply(input);
-        } else if (type == TransactionType.REGISTER_NAMESPACE.getValue()) {
+        } else if (type == EntityType.REGISTER_NAMESPACE.getValue()) {
             return new NamespaceCreationTransactionMapping().apply(input);
-        } else if (type == TransactionType.MOSAIC_DEFINITION.getValue()) {
-            return new MosaicCreationTransactionMapping().apply(input);
-        } else if (type == TransactionType.MOSAIC_SUPPLY_CHANGE.getValue()) {
+//        } else if (type == EntityType.MOSAIC_DEFINITION.getValue()) {
+//            return new MosaicCreationTransactionMapping().apply(input);
+        } else if (type == EntityType.MOSAIC_SUPPLY_CHANGE.getValue()) {
             return new MosaicSupplyChangeTransactionMapping().apply(input);
-        } else if (type == TransactionType.MODIFY_MULTISIG_ACCOUNT.getValue()) {
+        } else if (type == EntityType.MODIFY_MULTISIG_ACCOUNT.getValue()) {
             return new MultisigModificationTransactionMapping().apply(input);
-        } else if (type == TransactionType.AGGREGATE_COMPLETE.getValue() || type == TransactionType.AGGREGATE_BONDED.getValue()) {
+        } else if (type == EntityType.AGGREGATE_COMPLETE.getValue() || type == EntityType.AGGREGATE_BONDED.getValue()) {
             return new AggregateTransactionMapping().apply(input);
-        } else if (type == TransactionType.LOCK.getValue()) {
-            return new LockFundsTransactionMapping().apply(input);
-        } else if (type == TransactionType.SECRET_LOCK.getValue()) {
+        } else if (type == EntityType.LOCK.getValue()) {
+            return new HashLockTransactionMapping().apply(input);
+        } else if (type == EntityType.SECRET_LOCK.getValue()) {
             return new SecretLockTransactionMapping().apply(input);
-        } else if (type == TransactionType.SECRET_PROOF.getValue()) {
+        } else if (type == EntityType.SECRET_PROOF.getValue()) {
             return new SecretProofTransactionMapping().apply(input);
         }
 
@@ -111,7 +114,7 @@ class TransferTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         List<Mosaic> mosaics = new ArrayList<>();
 
         if (transaction.getJsonArray("mosaics") != null) {
@@ -120,25 +123,20 @@ class TransferTransactionMapping extends TransactionMapping {
                     .stream()
                     .map(item -> (JsonObject) item)
                     .map(mosaic -> new Mosaic(
-                            new MosaicId(extractBigInteger(mosaic.getJsonArray("id"))),
-                            extractBigInteger(mosaic.getJsonArray("amount"))))
+                            extractBigInteger(mosaic.getJsonArray("id")).longValue(),
+                            extractBigInteger(mosaic.getJsonArray("amount")).longValue()))
                     .collect(Collectors.toList());
         }
 
         Message message = PlainMessage.Empty;
         if (transaction.getJsonObject("message") != null) {
-            try {
-                message = new PlainMessage(new String(Hex.decode(transaction.getJsonObject("message").getString("payload")), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                message = new PlainMessage(transaction.getJsonObject("message").getString("payload"));
-            }
+            message = new PlainMessage(new String(Hex.decode(transaction.getJsonObject("message").getString("payload")), StandardCharsets.UTF_8));
         }
 
         return new TransferTransaction(
                 extractNetworkType(transaction.getInteger("version")),
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 Address.createFromEncoded(transaction.getString("recipient")),
                 mosaics,
                 message,
@@ -156,26 +154,25 @@ class NamespaceCreationTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
-        NamespaceType namespaceType = NamespaceType.rawValueOf(transaction.getInteger("namespaceType"));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
+        NamespaceType namespaceType = NamespaceType.rawValueOf(transaction.getInteger("namespaceType").byteValue());
 
         return new RegisterNamespaceTransaction(
                 extractNetworkType(transaction.getInteger("version")),
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
-                transaction.getString("name"),
-                new NamespaceId(extractBigInteger(transaction.getJsonArray("namespaceId"))),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 namespaceType,
-                namespaceType == NamespaceType.RootNamespace ? Optional.of(extractBigInteger(transaction.getJsonArray("duration"))) : Optional.empty(),
-                namespaceType == NamespaceType.SubNamespace ? Optional.of(new NamespaceId(extractBigInteger(transaction.getJsonArray("parentId")))) : Optional.empty(),
+                new NamespaceId(extractBigInteger(transaction.getJsonArray("namespaceId")).longValue()),
+                transaction.getString("name"),
+                namespaceType == NamespaceType.ROOT ? Optional.of(new BlockDuration(extractBigInteger(transaction.getJsonArray("duration")).longValue())) : Optional.empty(),
+                namespaceType == NamespaceType.CHILD ? Optional.of(new NamespaceId(extractBigInteger(transaction.getJsonArray("parentId")).longValue())) : Optional.empty(),
                 transaction.getString("signature"),
                 new PublicAccount(transaction.getString("signer"), extractNetworkType(transaction.getInteger("version"))),
                 transactionInfo
         );
     }
 }
-
+/*
 class MosaicCreationTransactionMapping extends TransactionMapping {
 
     @Override
@@ -184,12 +181,12 @@ class MosaicCreationTransactionMapping extends TransactionMapping {
 
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
 
         JsonArray mosaicProperties = transaction.getJsonArray("properties");
 
         String flags = "00" + Integer.toBinaryString(extractBigInteger(mosaicProperties.getJsonObject(0).getJsonArray("value")).intValue());
-        String bitMapFlags = flags.substring(flags.length() - 3, flags.length());
+        String bitMapFlags = flags.substring(flags.length() - 3);
         MosaicProperties properties = new MosaicProperties(bitMapFlags.charAt(2) == '1',
                 bitMapFlags.charAt(1) == '1',
                 bitMapFlags.charAt(0) == '1',
@@ -198,12 +195,11 @@ class MosaicCreationTransactionMapping extends TransactionMapping {
 
         return new MosaicDefinitionTransaction(
                 extractNetworkType(transaction.getInteger("version")),
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 transaction.getString("name"),
-                new NamespaceId(extractBigInteger(transaction.getJsonArray("parentId"))),
-                new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId"))),
+                new NamespaceId(extractBigInteger(transaction.getJsonArray("parentId")).longValue()),
+                new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId")).longValue()),
                 properties,
                 transaction.getString("signature"),
                 new PublicAccount(transaction.getString("signer"), extractNetworkType(transaction.getInteger("version"))),
@@ -211,7 +207,7 @@ class MosaicCreationTransactionMapping extends TransactionMapping {
         );
     }
 }
-
+*/
 class MosaicSupplyChangeTransactionMapping extends TransactionMapping {
 
     @Override
@@ -219,16 +215,15 @@ class MosaicSupplyChangeTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
 
         return new MosaicSupplyChangeTransaction(
                 extractNetworkType(transaction.getInteger("version")),
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
-                new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId"))),
-                MosaicSupplyType.rawValueOf(transaction.getInteger("direction")),
-                extractBigInteger(transaction.getJsonArray("delta")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
+                new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId")).longValue()),
+                MosaicSupplyChangeDirection.rawValueOf(transaction.getInteger("direction").byteValue()),
+                extractBigInteger(transaction.getJsonArray("delta")).longValue(),
                 transaction.getString("signature"),
                 new PublicAccount(transaction.getString("signer"), extractNetworkType(transaction.getInteger("version"))),
                 transactionInfo
@@ -243,25 +238,24 @@ class MultisigModificationTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         NetworkType networkType = extractNetworkType(transaction.getInteger("version"));
 
-        List<MultisigCosignatoryModification> modifications = transaction.containsKey("modifications") ? transaction
+        List<CosignatoryModification> modifications = transaction.containsKey("modifications") ? transaction
                 .getJsonArray("modifications")
                 .stream()
                 .map(item -> (JsonObject) item)
-                .map(multisigModification -> new MultisigCosignatoryModification(
-                        MultisigCosignatoryModificationType.rawValueOf(multisigModification.getInteger("type")),
-                        PublicAccount.createFromPublicKey(multisigModification.getString("cosignatoryPublicKey"), networkType)))
+                .map(coSignatoryModification -> new CosignatoryModification(
+                        CosignatoryModificationType.rawValueOf(coSignatoryModification.getInteger("type").byteValue()),
+                        PublicKey.fromHexString(coSignatoryModification.getString("cosignatoryPublicKey"))))
                 .collect(Collectors.toList()) : Collections.emptyList();
 
         return new ModifyMultisigAccountTransaction(
                 networkType,
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
-                transaction.getInteger("minApprovalDelta"),
-                transaction.getInteger("minRemovalDelta"),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
+                transaction.getInteger("minApprovalDelta").byteValue(),
+                transaction.getInteger("minRemovalDelta").byteValue(),
                 modifications,
                 transaction.getString("signature"),
                 new PublicAccount(transaction.getString("signer"), networkType),
@@ -277,7 +271,7 @@ class AggregateTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         NetworkType networkType = extractNetworkType(transaction.getInteger("version"));
 
         List<Transaction> transactions = new ArrayList<>();
@@ -306,10 +300,8 @@ class AggregateTransactionMapping extends TransactionMapping {
 
         return new AggregateTransaction(
                 networkType,
-                TransactionType.rawValueOf(transaction.getInteger("type")),
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 transactions,
                 cosignatures,
                 transaction.getString("signature"),
@@ -319,29 +311,28 @@ class AggregateTransactionMapping extends TransactionMapping {
     }
 }
 
-class LockFundsTransactionMapping extends TransactionMapping {
+class HashLockTransactionMapping extends TransactionMapping {
 
     @Override
-    public LockFundsTransaction apply(JsonObject input) {
+    public HashLockTransaction apply(JsonObject input) {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         NetworkType networkType = extractNetworkType(transaction.getInteger("version"));
         Mosaic mosaic;
         if (transaction.containsKey("mosaicId")) {
-            mosaic = new Mosaic(new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId"))), extractBigInteger(transaction.getJsonArray("amount")));
+            mosaic = new Mosaic(extractBigInteger(transaction.getJsonArray("mosaicId")).longValue(), extractBigInteger(transaction.getJsonArray("amount")).longValue());
         } else {
-            mosaic = new Mosaic(new MosaicId(extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("id"))), extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("amount")));
+            mosaic = new Mosaic(extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("id")).longValue(), extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("amount")).longValue());
         }
-        return new LockFundsTransaction(
+        return new HashLockTransaction(
                 networkType,
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 mosaic,
-                extractBigInteger(transaction.getJsonArray("duration")),
-                new SignedTransaction("", transaction.getString("hash"), TransactionType.AGGREGATE_BONDED),
+                new BlockDuration(extractBigInteger(transaction.getJsonArray("duration")).longValue()),
+                transaction.getString("hash"),
                 transaction.getString("signature"),
                 new PublicAccount(transaction.getString("signer"), networkType),
                 transactionInfo
@@ -356,22 +347,21 @@ class SecretLockTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         NetworkType networkType = extractNetworkType(transaction.getInteger("version"));
         Mosaic mosaic;
         if (transaction.containsKey("mosaicId")) {
-            mosaic = new Mosaic(new MosaicId(extractBigInteger(transaction.getJsonArray("mosaicId"))), extractBigInteger(transaction.getJsonArray("amount")));
+            mosaic = new Mosaic(extractBigInteger(transaction.getJsonArray("mosaicId")).longValue(), extractBigInteger(transaction.getJsonArray("amount")).longValue());
         } else {
-            mosaic = new Mosaic(new MosaicId(extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("id"))), extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("amount")));
+            mosaic = new Mosaic(extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("id")).longValue(), extractBigInteger(transaction.getJsonObject("mosaic").getJsonArray("amount")).longValue());
         }
         return new SecretLockTransaction(
                 networkType,
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
                 mosaic,
-                extractBigInteger(transaction.getJsonArray("duration")),
-                HashType.rawValueOf(transaction.getInteger("hashAlgorithm")),
+                new BlockDuration(extractBigInteger(transaction.getJsonArray("duration")).longValue()),
+                LockHashAlgorithm.rawValueOf(transaction.getInteger("hashAlgorithm").byteValue()),
                 transaction.getString("secret"),
                 Address.createFromEncoded(transaction.getString("recipient")),
                 transaction.getString("signature"),
@@ -388,15 +378,14 @@ class SecretProofTransactionMapping extends TransactionMapping {
         TransactionInfo transactionInfo = this.createTransactionInfo(input.getJsonObject("meta"));
 
         JsonObject transaction = input.getJsonObject("transaction");
-        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")));
+        Deadline deadline = new Deadline(extractBigInteger(transaction.getJsonArray("deadline")).longValue());
         NetworkType networkType = extractNetworkType(transaction.getInteger("version"));
 
         return new SecretProofTransaction(
                 networkType,
-                extractTransactionVersion(transaction.getInteger("version")),
                 deadline,
-                extractBigInteger(transaction.getJsonArray("fee")),
-                HashType.rawValueOf(transaction.getInteger("hashAlgorithm")),
+                extractBigInteger(transaction.getJsonArray("fee")).longValue(),
+                LockHashAlgorithm.rawValueOf(transaction.getInteger("hashAlgorithm").byteValue()),
                 transaction.getString("secret"),
                 transaction.getString("proof"),
                 transaction.getString("signature"),

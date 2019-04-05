@@ -16,7 +16,15 @@
 
 package io.nem.sdk.model.transaction;
 
+import io.nem.core.utils.ByteUtils;
 import io.nem.sdk.model.account.PublicAccount;
+import io.nem.sdk.model.blockchain.NetworkType;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * The model representing cosignature of an aggregate transaction.
@@ -30,6 +38,15 @@ public class AggregateTransactionCosignature {
     public AggregateTransactionCosignature(String signature, PublicAccount signer) {
         this.signature = signature;
         this.signer = signer;
+    }
+
+    AggregateTransactionCosignature(final DataInput inputStream, final NetworkType networkType) throws Exception {
+        ByteBuffer signerBuffer = ByteBuffer.allocate(32);
+        inputStream.readFully(signerBuffer.array());
+        ByteBuffer signatureBuffer = ByteBuffer.allocate(64);
+        inputStream.readFully(signatureBuffer.array());
+        this.signer = PublicAccount.createFromPublicKey(new String(signerBuffer.array()).trim(), networkType);
+        this.signature = new String(signatureBuffer.array());
     }
 
     /**
@@ -48,5 +65,16 @@ public class AggregateTransactionCosignature {
      */
     public PublicAccount getSigner() {
         return signer;
+    }
+
+    public static AggregateTransactionCosignature loadFromBinary(final DataInput inputStream, final NetworkType networkType) throws Exception { return new AggregateTransactionCosignature(inputStream, networkType); }
+
+    public byte[] serialize() throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        DataOutputStream stream = new DataOutputStream(byteArrayOutputStream);
+        stream.write(this.signer.getPublicKey().getBytes(), 0, 32);
+        stream.write(this.signature.getBytes(), 0 , 64);
+        stream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 }

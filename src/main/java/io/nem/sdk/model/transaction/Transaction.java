@@ -19,59 +19,75 @@ package io.nem.sdk.model.transaction;
 import io.nem.core.crypto.Hashes;
 import io.nem.core.crypto.Signature;
 import io.nem.core.crypto.Signer;
+import io.nem.core.utils.ByteUtils;
 import io.nem.sdk.model.account.Account;
 import io.nem.sdk.model.account.PublicAccount;
-import io.nem.sdk.model.blockchain.NetworkType;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.Validate;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutputStream;
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.Optional;
 
-/**
- * An abstract transaction class that serves as the base class of all NEM transactions.
- *
- * @since 1.0
- */
-public abstract class Transaction {
-    private final TransactionType type;
-    private final NetworkType networkType;
-    private final Integer version;
+public class Transaction {
+    private final SizePrefixedEntity sizePrefixedEntity;
+    private final EntityBody entityBody;
+    private final long max_fee;
     private final Deadline deadline;
-    private final BigInteger fee;
-    private final Optional<String> signature;
-    private Optional<PublicAccount> signer;
+    private final VerifiableEntity verifiableEntity;
     private final Optional<TransactionInfo> transactionInfo;
 
-    /**
-     * Constructor
-     *
-     * @param type            Transaction type.
-     * @param networkType     Network type.
-     * @param version         Transaction version.
-     * @param deadline        Transaction deadline.
-     * @param fee             Transaction fee.
-     * @param signature       Transaction signature.
-     * @param signer          Transaction signer.
-     * @param transactionInfo Transaction meta data info.
-     */
-    public Transaction(TransactionType type, NetworkType networkType, Integer version, Deadline deadline, BigInteger fee, Optional<String> signature, Optional<PublicAccount> signer, Optional<TransactionInfo> transactionInfo) {
-        Validate.notNull(type, "Type must not be null");
-        Validate.notNull(networkType, "NetworkType must not be null");
-        Validate.notNull(version, "Version must not be null");
-        Validate.notNull(deadline, "Deadline must not be null");
-        Validate.notNull(fee, "Fee must not be null");
-        this.type = type;
-        this.networkType = networkType;
-        this.version = version;
-        this.deadline = deadline;
-        this.fee = fee;
+    Transaction(SizePrefixedEntity sizePrefixedEntity, EntityBody entityBody, Deadline deadline, long max_fee, VerifiableEntity verifiableEntity) {
+        this(sizePrefixedEntity, entityBody, deadline, max_fee, verifiableEntity, Optional.empty());
+    }
 
-        this.signature = signature;
-        this.signer = signer;
+    Transaction(SizePrefixedEntity sizePrefixedEntity, EntityBody entityBody, Deadline deadline, long max_fee, VerifiableEntity verifiableEntity, Optional<TransactionInfo> transactionInfo) {
+        Validate.notNull(sizePrefixedEntity, "Size Prefixed Entity must not be null");
+        Validate.notNull(entityBody, "Entity Body must not be null");
+        Validate.notNull(deadline, "Deadline must not be null");
+        Validate.notNull(verifiableEntity, "Verifiable Entity must not be null");
+        this.sizePrefixedEntity = sizePrefixedEntity;
+        this.entityBody = entityBody;
+        this.deadline = deadline;
+        this.max_fee = max_fee;
+        this.verifiableEntity = verifiableEntity;
         this.transactionInfo = transactionInfo;
     }
+
+    Transaction(final DataInput inputStream) throws Exception {
+        this.sizePrefixedEntity = SizePrefixedEntity.loadFromBinary(inputStream);
+        this.verifiableEntity = VerifiableEntity.loadFromBinary(inputStream);
+        this.entityBody = EntityBody.loadFromBinary(inputStream);
+        this.max_fee = ByteUtils.streamToLong(inputStream, ByteOrder.LITTLE_ENDIAN);
+        this.deadline = new Deadline(ByteUtils.streamToLong(inputStream, ByteOrder.LITTLE_ENDIAN));
+        this.transactionInfo = Optional.empty();
+    }
+
+    public SizePrefixedEntity getSizePrefixedEntity()  {
+        return this.sizePrefixedEntity;
+    }
+
+    public VerifiableEntity getVerifiableEntity()  {
+        return this.verifiableEntity;
+    }
+
+    public EntityBody getEntityBody()  {
+        return this.entityBody;
+    }
+
+    public long getFee()  {
+        return this.max_fee;
+    }
+
+    public Deadline getDeadline()  {
+        return this.deadline;
+    }
+
+    public Optional<TransactionInfo> getTransactionInfo() { return this.transactionInfo; }
 
     /**
      * Generates hash for a serialized transaction payload.
@@ -90,84 +106,14 @@ public abstract class Transaction {
     }
 
     /**
-     * Returns the transaction type.
-     *
-     * @return transaction type
-     */
-    public TransactionType getType() {
-        return type;
-    }
-
-    /**
-     * Returns the network type.
-     *
-     * @return the network type
-     */
-    public NetworkType getNetworkType() {
-        return networkType;
-    }
-
-    /**
-     * Returns the transaction version.
-     *
-     * @return transaction version
-     */
-    public Integer getVersion() {
-        return version;
-    }
-
-    /**
-     * Returns the deadline to include the transaction.
-     *
-     * @return deadline to include transaction into a block.
-     */
-    public Deadline getDeadline() {
-        return deadline;
-    }
-
-    /**
-     * Returns the fee for the transaction. The higher the fee, the higher the priority of the transaction.
-     * Transactions with high priority get included in a block before transactions with lower priority.
-     *
-     * @return fee amount
-     */
-    public BigInteger getFee() {
-        return fee;
-    }
-
-    /**
-     * Returns the transaction signature (missing if part of an aggregate transaction).
-     *
-     * @return transaction signature
-     */
-    public Optional<String> getSignature() { return signature; }
-
-    /**
-     * Returns the transaction creator public account.
-     *
-     * @return signer public account
-     */
-    public Optional<PublicAccount> getSigner() { return signer; }
-
-    /**
-     * Returns meta data object contains additional information about the transaction.
-     *
-     * @return transaction meta data info.
-     */
-    public Optional<TransactionInfo> getTransactionInfo() { return transactionInfo; }
-
-    abstract byte[] generateBytes();
-
-    /**
      * Serialize and sign transaction creating a new SignedTransaction.
      *
      * @param account The account to sign the transaction.
      * @return {@link SignedTransaction}
      */
-    public SignedTransaction signWith(Account account) {
-
+    public SignedTransaction signWith(Account account) throws Exception {
         Signer signer = new Signer(account.getKeyPair());
-        byte[] bytes = this.generateBytes();
+        byte[] bytes = this.serialize();
         byte[] signingBytes = new byte[bytes.length - 100];
         System.arraycopy(bytes, 100, signingBytes, 0, bytes.length - 100);
         Signature signature = signer.sign(signingBytes);
@@ -179,7 +125,7 @@ public abstract class Transaction {
         System.arraycopy(bytes, 100, payload, 100, bytes.length - 100);
 
         String hash = Transaction.createTransactionHash(Hex.toHexString(payload));
-        return new SignedTransaction(Hex.toHexString(payload).toUpperCase(), hash, type);
+        return new SignedTransaction(Hex.toHexString(payload).toUpperCase(), hash, entityBody.getEntityType());
     }
 
     /**
@@ -187,9 +133,9 @@ public abstract class Transaction {
      *
      * @return transaction with signer serialized to be part of an aggregate transaction
      */
-    byte[] toAggregateTransactionBytes() {
-        byte[] signerBytes = Hex.decode(this.signer.get().getPublicKey());
-        byte[] bytes = this.generateBytes();
+    byte[] toAggregateTransactionBytes() throws Exception {
+        byte[] signerBytes = Hex.decode(this.entityBody.getSigner().get().getPublicKey());
+        byte[] bytes = this.serialize();
         byte[] resultBytes = new byte[bytes.length - 64 - 16];
 
         System.arraycopy(signerBytes, 0, resultBytes, 4, 32); // Copy signer
@@ -211,7 +157,7 @@ public abstract class Transaction {
      * @return instance of Transaction with signer
      */
     public Transaction toAggregate(PublicAccount signer) {
-        this.signer = Optional.of(signer);
+        this.entityBody.setSigner(signer);
         return this;
     }
 
@@ -249,5 +195,19 @@ public abstract class Transaction {
      */
     public boolean isUnannounced() {
         return !this.transactionInfo.isPresent();
+    }
+
+    public static Transaction loadFromBinary(final DataInput inputStream) throws Exception { return new Transaction(inputStream); }
+
+    public byte[] serialize() throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        DataOutputStream stream = new DataOutputStream(byteArrayOutputStream);
+        stream.write(this.sizePrefixedEntity.serialize());
+        stream.write(this.verifiableEntity.serialize());
+        stream.write(this.entityBody.serialize());
+        stream.write(ByteUtils.longToBytes(this.max_fee, ByteOrder.LITTLE_ENDIAN));
+        stream.write(ByteUtils.longToBytes(this.deadline.getInstant(), ByteOrder.LITTLE_ENDIAN));
+        stream.close();
+        return byteArrayOutputStream.toByteArray();
     }
 }

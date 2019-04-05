@@ -16,41 +16,33 @@
 
 package io.nem.sdk.model.namespace;
 
-/**
- * Enum containing namespace supply type.
- *
- * @since 1.0
- */
+import io.nem.core.utils.ByteUtils;
+
+import java.io.DataInput;
+import java.nio.ByteOrder;
+
 public enum NamespaceType {
-    /**
-     * Root namespace
-     */
-    RootNamespace(0),
-    /**
-     * Sub namespace
-     */
-    SubNamespace(1);
+    ROOT((byte)0),
+    CHILD((byte)1);
 
-    private int value;
+    private final byte value;
 
-    NamespaceType(int value) {
+    NamespaceType(byte value)  {
         this.value = value;
     }
 
-    public static NamespaceType rawValueOf(int value) {
+    public static NamespaceType rawValueOf(byte value) {
         switch (value) {
-            case 0:
-                return NamespaceType.RootNamespace;
-            case 1:
-                return NamespaceType.SubNamespace;
+            case (byte)0:
+                return NamespaceType.ROOT;
+            case (byte)1:
+                return NamespaceType.CHILD;
             default:
                 throw new IllegalArgumentException(value + " is not a valid value");
         }
     }
 
-    public int getValue() {
-        return value;
-    }
+    public static NamespaceType loadFromBinary(final DataInput inputStream) throws Exception { return NamespaceType.rawValueOf(ByteUtils.streamToByte(inputStream, ByteOrder.LITTLE_ENDIAN)); }
 
+    public byte[] serialize() { return ByteUtils.byteToBytes(this.value, ByteOrder.LITTLE_ENDIAN); }
 }
-

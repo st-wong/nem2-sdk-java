@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package io.nem.sdk.model.transaction;
+package io.nem.sdk.model.blockchain;
 
-class ScalarAttribute extends SchemaAttribute {
-    final private Constants size;
+public class BlockDuration {
+    public BlockDuration(long duration) { this.value = duration; }
 
-    ScalarAttribute(String name, Constants typeSize) {
-        super(name);
-        this.size = typeSize;
-    }
+    public long getValue() { return this.value; }
 
-    @Override
-    byte[] serialize(byte[] buffer, int position, int innerObjectPosition) {
-        return findParam(innerObjectPosition, position, buffer, size);
-    }
+    private final long value;
 }

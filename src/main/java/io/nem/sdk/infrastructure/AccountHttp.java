@@ -69,8 +69,8 @@ public class AccountHttp extends Http implements AccountRepository {
                         accountDTO.getImportance().extractIntArray(),
                         accountDTO.getImportanceHeight().extractIntArray(),
                         accountDTO.getMosaics().stream().map(mosaicDTO -> new Mosaic(
-                                new MosaicId(mosaicDTO.getId().extractIntArray()),
-                                mosaicDTO.getAmount().extractIntArray()
+                                mosaicDTO.getId().extractIntArray().longValue(),
+                                mosaicDTO.getAmount().extractIntArray().longValue()
                         )).collect(Collectors.toList())));
     }
 
@@ -97,8 +97,8 @@ public class AccountHttp extends Http implements AccountRepository {
                                 accountDTO.getImportance().extractIntArray(),
                                 accountDTO.getImportanceHeight().extractIntArray(),
                                 accountDTO.getMosaics().stream().map(mosaicDTO -> new Mosaic(
-                                        new MosaicId(mosaicDTO.getId().extractIntArray()),
-                                        mosaicDTO.getAmount().extractIntArray()
+                                        mosaicDTO.getId().extractIntArray().longValue(),
+                                        mosaicDTO.getAmount().extractIntArray().longValue()
                                 )).collect(Collectors.toList())))
                         .toList()
                         .toObservable());

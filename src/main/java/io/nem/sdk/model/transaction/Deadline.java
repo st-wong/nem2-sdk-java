@@ -16,7 +16,6 @@
 
 package io.nem.sdk.model.transaction;
 
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -33,7 +32,7 @@ public class Deadline {
     /**
      * Nemesis block timestamp.
      */
-    public static Instant TIMESTAMP_NEMSIS_BLOCK = Instant.ofEpochSecond(1459468800);
+    public static Instant TIMESTAMP_NEMESIS_BLOCK = Instant.ofEpochSecond(1459468800);
     private final Instant instant;
 
     /**
@@ -51,8 +50,8 @@ public class Deadline {
      *
      * @param input Deadline in BigInteger format
      */
-    public Deadline(BigInteger input) {
-        instant = Instant.ofEpochMilli(input.longValue());
+    public Deadline(long input) {
+        instant = Instant.ofEpochMilli(input);
     }
 
     /**
@@ -72,7 +71,7 @@ public class Deadline {
      * @return long
      */
     public long getInstant() {
-        return instant.toEpochMilli() - Deadline.TIMESTAMP_NEMSIS_BLOCK.toEpochMilli();
+        return instant.toEpochMilli() - Deadline.TIMESTAMP_NEMESIS_BLOCK.toEpochMilli();
     }
 
     /**
